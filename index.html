@@ -1,0 +1,1591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kubernetes Skyrealm</title>
+<meta name="description" content="An interactive 3D Kubernetes visualization. Watch every request, watch event, etcd Raft message, CRI call, DNS query and VXLAN packet flow through a live cluster, with guided quests for Deployments, Services, Ingress, HPA, Argo CD, Flux, Kyverno, CSI storage and Prometheus.">
+<meta name="keywords" content="kubernetes, k8s, kubernetes visualization, kubernetes architecture, interactive kubernetes tutorial, learn kubernetes, kube-apiserver, etcd, raft, kube-scheduler, kubelet, kube-proxy, containerd, cni, flannel, vxlan, coredns, ingress, hpa, gitops, argo cd, flux, kyverno, csi, prometheus, three.js, 3d, webgl">
+<meta name="author" content="Zaafir Rizwan">
+<meta name="theme-color" content="#141a2b">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Kubernetes Skyrealm: an explorable 3D Kubernetes cluster">
+<meta property="og:description" content="Follow every packet through a living Kubernetes cluster: control plane, nodes, Pods, networking, GitOps and more.">
+<meta property="og:url" content="https://k8s-skyrealm.pages.dev/">
+<meta name="twitter:card" content="summary">
+<link rel="canonical" href="https://k8s-skyrealm.pages.dev/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Nunito:wght@500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: full-bleed toon-shaded 3D sky world; navy-glass HUD with brass trim at the edges, Genshin-style dialogue band at the bottom. Single dark look by design. */
+:root{
+  --ink:#ece5d8; --ink-dim:#a9a397; --gold:#d3bc8e; --gold-hi:#f2dca8;
+  --navy:rgba(26,31,49,.86); --navy-deep:#141a2b; --line:rgba(211,188,142,.32); --paper:#f4ecdb; --paper-ink:#2b2440;
+  --ok:#2e9c6a; --bad:#d4553f;
+  --display:'Cinzel','Trajan Pro',Georgia,serif; --body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--navy-deep);color:var(--ink);font-family:var(--body)}
+button,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+#world{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none;touch-action:none}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+
+.lbl{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;white-space:nowrap;text-align:center;font:600 12px/1.15 var(--body);color:var(--ink);background:rgba(22,27,44,.74);border:1px solid var(--line);padding:3px 10px 4px;border-radius:999px;backdrop-filter:blur(3px);will-change:transform;transition:border-color .2s}
+.lbl b{display:block;font-weight:800;letter-spacing:.02em}
+.lbl span{display:block;font:500 10px/1.3 var(--mono);color:var(--ink-dim)}
+.lbl.big{background:rgba(22,27,44,.6)}
+.lbl.big b{font-family:var(--display);font-size:15px;color:var(--gold-hi);letter-spacing:.08em}
+.lbl.pod{font-size:11px;padding:2px 8px 3px;background:rgba(22,27,44,.62)}
+.lbl.pod b{font-weight:700}
+.lbl:hover,.lbl.sel{border-color:var(--gold-hi);box-shadow:0 0 0 2px rgba(242,220,168,.28)}
+.lbl.down b{color:#ff9a86}
+.pk{position:absolute;left:0;top:0;pointer-events:none;white-space:nowrap;font:700 12.5px/1.25 var(--body);color:#fff;background:rgba(14,18,32,.88);border:1.5px solid var(--pc,#fff);box-shadow:0 0 14px color-mix(in srgb,var(--pc,#fff) 55%,transparent);padding:5px 10px 6px 6px;border-radius:9px;will-change:transform;z-index:2}
+.pk b{display:inline-block;font:800 10px/1 var(--mono);color:var(--paper-ink);background:var(--pc);border-radius:4px;padding:3px 5px;margin-right:7px;vertical-align:1px}
+.pk small{display:block;font:600 11px/1.3 var(--body);color:var(--ink-dim);margin-top:2px;padding-left:2px}
+#transit{display:grid;justify-content:center;gap:3px;margin:0 auto 10px;font-size:12.5px}
+#transit em{font:700 10.5px var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-style:normal;text-align:center;margin-bottom:2px}
+#transit div{display:flex;align-items:center;gap:6px;justify-content:center;color:var(--ink-dim)}
+#transit div b{color:var(--ink)}
+#transit div i{width:9px;height:9px;transform:rotate(45deg);background:var(--pc);box-shadow:0 0 8px var(--pc);flex:none}
+#transit div span{font:500 11px var(--mono);color:var(--pc)}
+#transit .more{font-size:11px}
+.say{position:absolute;left:0;top:0;pointer-events:none;width:max-content;max-width:250px;font:700 12px/1.35 var(--body);color:var(--paper-ink);background:var(--paper);border:1.5px solid var(--gold);padding:6px 10px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.28);animation:pop .22s ease-out;will-change:transform}
+.say code{font:600 11px var(--mono)}
+.say.ok::before{content:'✓ ';color:var(--ok);font-weight:900}
+.say.bad{background:#ffe5de;border-color:var(--bad)}
+.say.bad::before{content:'✗ ';color:var(--bad);font-weight:900}
+.say.score{background:#fff6d8;font-family:var(--mono);font-size:11px}
+@keyframes pop{from{transform:scale(.8);opacity:0}}
+
+.panel{position:fixed;background:var(--navy);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 0 0 3px rgba(20,26,43,.6),inset 0 0 0 4px rgba(211,188,142,.12);backdrop-filter:blur(8px)}
+#brand{top:calc(14px + env(safe-area-inset-top,0px));left:16px;display:flex;align-items:center;gap:12px;padding:10px 16px 10px 12px}
+#brand svg{flex:none}
+#brand h1{margin:0;font:700 17px/1.1 var(--display);letter-spacing:.12em;color:var(--gold-hi);text-transform:uppercase}
+#brand p{margin:3px 0 0;font-size:11.5px;color:var(--ink-dim)}
+#brand code{font-family:var(--mono);color:var(--ink)}
+.mob{display:none}
+
+#quests{top:calc(88px + env(safe-area-inset-top,0px));left:16px;width:286px;max-height:calc(100% - 300px);overflow:auto;padding:14px}
+h2,h3{margin:0 0 10px;font:700 12px var(--display);letter-spacing:.18em;text-transform:uppercase;color:var(--gold)}
+h3{margin-top:16px}
+#qlist{display:grid;gap:8px}
+.q{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;text-align:left;background:rgba(255,255,255,.035);border:1px solid rgba(211,188,142,.18);border-radius:10px;padding:9px 11px;cursor:pointer;transition:background .15s,border-color .15s}
+.q:hover{background:rgba(255,255,255,.07);border-color:var(--line)}
+.q.on{border-color:var(--gold-hi);background:rgba(242,220,168,.1)}
+.q i{grid-row:span 2;font:700 13px var(--display);color:var(--gold);font-style:normal;padding-top:1px}
+.q b{font-size:13.5px;font-weight:800}
+.q span{font-size:11.5px;color:var(--ink-dim);line-height:1.35}
+#legend{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px}
+.lg{display:flex;align-items:center;gap:7px;font-size:11.5px;min-width:0}
+.lg i{flex:none;width:9px;height:9px;transform:rotate(45deg);background:var(--pc);box-shadow:0 0 8px var(--pc)}
+.lg small{color:var(--ink-dim)}
+
+#insp{top:calc(14px + env(safe-area-inset-top,0px));right:16px;width:344px;max-height:calc(100% - 232px);display:flex;flex-direction:column;overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--line)}
+.tabs button{flex:1;background:none;border:0;padding:11px 8px;cursor:pointer;font:700 11.5px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim)}
+.tabs button.on{color:var(--gold-hi);box-shadow:inset 0 -2px 0 var(--gold)}
+.tabs span{font:600 10px var(--mono);background:rgba(211,188,142,.18);border-radius:8px;padding:1px 6px;margin-left:4px}
+#info,#log{overflow:auto;padding:14px 16px 16px;min-height:0}
+#info h4{margin:0;font:700 18px/1.2 var(--display);color:var(--gold-hi);letter-spacing:.04em;text-wrap:balance}
+#info .sub{margin:3px 0 10px;font:500 11px var(--mono);color:var(--ink-dim)}
+#info p{margin:0 0 10px;font-size:13px;line-height:1.5}
+#info ul{margin:0 0 10px;padding-left:18px;font-size:12.5px;line-height:1.5}
+#info dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:0 0 12px;font-size:12px}
+#info dt{color:var(--ink-dim)}
+#info dd{margin:0;font-family:var(--mono);font-size:11.5px;min-width:0;overflow-wrap:anywhere}
+#info pre{margin:6px 0 12px;background:rgba(8,10,20,.55);border:1px solid rgba(211,188,142,.15);border-radius:8px;padding:9px 10px;font:400 11px/1.5 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere;color:#d9e4f5}
+.leg{border-left:3px solid var(--pc);padding:2px 0 2px 10px;margin-bottom:6px}
+.leg .h{display:flex;gap:8px;align-items:baseline;font-size:12px;flex-wrap:wrap}
+.chip{font:700 10px var(--mono);color:var(--paper-ink);background:var(--pc);border-radius:4px;padding:2px 5px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn{background:rgba(242,220,168,.1);border:1px solid var(--line);border-radius:999px;padding:6px 14px;cursor:pointer;font-size:12px;font-weight:700}
+.btn:hover{background:rgba(242,220,168,.2)}
+.btn.pri{background:var(--gold);color:var(--paper-ink);border-color:var(--gold-hi)}
+.btn.pri:hover{background:var(--gold-hi)}
+.btn:disabled{opacity:.4;cursor:default}
+#log{list-style:none;margin:0;display:grid;gap:4px;align-content:start}
+#log li{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:11.5px;background:rgba(255,255,255,.03)}
+#log li:hover{background:rgba(255,255,255,.08)}
+#log li .chip{grid-row:span 2;align-self:start;margin-top:1px}
+#log li em{font-style:normal;font:500 10.5px var(--mono);color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty{color:var(--ink-dim);font-size:12.5px;line-height:1.5}
+
+#dlg{position:fixed;left:0;right:0;bottom:0;padding:44px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,rgba(10,12,22,0),rgba(10,12,22,.78) 38%,rgba(10,12,22,.9));pointer-events:none}
+#dlg .inner{max-width:820px;margin:0 auto;pointer-events:auto;text-align:center}
+.who{display:flex;align-items:center;justify-content:center;gap:12px;font:700 15px var(--display);letter-spacing:.1em;color:var(--gold-hi)}
+.who::before,.who::after{content:'';height:1px;width:64px;background:linear-gradient(90deg,transparent,var(--gold))}
+.who::after{transform:scaleX(-1)}
+#txt{margin:8px auto 12px;max-width:68ch;min-height:3em;font-size:15.5px;line-height:1.55;color:#f6f1e7;text-wrap:pretty}
+#txt code{font:600 13px var(--mono);color:var(--gold-hi)}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;align-items:center;font-size:12px;color:var(--ink-dim)}
+.ctl label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.ctl select{background:var(--navy);border:1px solid var(--line);border-radius:6px;padding:3px 6px}
+#stepn{font:600 11px var(--mono);color:var(--gold)}
+kbd{font:600 10px var(--mono);border:1px solid var(--line);border-radius:4px;padding:0 4px;color:var(--ink-dim)}
+
+[hidden]{display:none!important}
+.plain{background:rgba(242,220,168,.1);border-left:3px solid var(--gold);padding:7px 10px;border-radius:0 8px 8px 0;color:var(--gold-hi)}
+.tabs .x{flex:0 0 40px;font:400 20px var(--body);letter-spacing:0;color:var(--ink-dim)}
+details{margin-top:14px}
+summary{cursor:pointer;font:700 12px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+#flow{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 6px;margin-bottom:10px;font:700 11.5px var(--body)}
+#flow span{padding:3px 9px;border-radius:999px;border:1px solid rgba(211,188,142,.25);color:var(--ink-dim)}
+#flow span.done{color:var(--ink);border-color:var(--line)}
+#flow span.now{background:var(--gold);color:var(--paper-ink);border-color:var(--gold-hi)}
+#flow i{font-style:normal;color:var(--gold);opacity:.6}
+@media (max-width:860px){
+  #flow,#transit{display:none!important}
+  .mob{display:inline-block}
+  #brand{right:16px;padding:8px 10px}
+  #brand h1{font-size:14px}
+  #brand p{display:none}
+  #brand .sp{flex:1}
+  #quests,#insp{top:calc(72px + env(safe-area-inset-top,0px));left:16px;right:16px;width:auto;max-height:calc(100% - 330px);display:none}
+  #quests.open{display:block}
+  #insp.open{display:flex}
+  #txt{font-size:14px}
+  .ctl .opt{display:none}
+}
+@media (prefers-reduced-motion:reduce){.say{animation:none}}
+</style>
+
+<canvas id="world" tabindex="0" aria-label="3D Kubernetes cluster world. Drag to orbit, scroll to zoom, click anything to inspect it."></canvas>
+<div id="labels"></div>
+
+<header id="brand" class="panel">
+  <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><polygon points="17,2 29,8 32,21 24,31 10,31 2,21 5,8" fill="none" stroke="#d3bc8e" stroke-width="1.6"/><circle cx="17" cy="17" r="4" fill="none" stroke="#f2dca8" stroke-width="1.6"/><g stroke="#f2dca8" stroke-width="1.4"><line x1="17" y1="13" x2="17" y2="6"/><line x1="20.1" y1="14.5" x2="25.6" y2="10.1"/><line x1="20.9" y1="17.9" x2="27.7" y2="19.4"/><line x1="18.7" y1="20.6" x2="21.8" y2="26.9"/><line x1="15.3" y1="20.6" x2="12.2" y2="26.9"/><line x1="13.1" y1="17.9" x2="6.3" y2="19.4"/><line x1="13.9" y1="14.5" x2="8.4" y2="10.1"/></g></svg>
+  <div><h1>Kubernetes Skyrealm</h1><p>cluster <code>realm-prod</code> · v1.31 · 1 control plane · 4 nodes</p></div>
+  <span class="sp"></span>
+  <button id="tQ" class="mob btn">Quests</button><button id="tI" class="mob btn">Inspect</button>
+</header>
+
+<aside id="quests" class="panel" aria-label="Quests">
+  <h2>Quests</h2>
+  <div id="qlist"></div>
+  <details><summary>What the colours mean</summary><div id="legend"></div></details>
+</aside>
+
+<aside id="insp" class="panel" aria-label="Inspector" hidden>
+  <div class="tabs" role="tablist"><button data-tab="info" class="on" role="tab">Inspect</button><button data-tab="log" role="tab">Packet log <span id="logn">0</span></button><button id="xInsp" aria-label="Close inspector" class="x">×</button></div>
+  <div id="info"></div>
+  <ol id="log" hidden></ol>
+</aside>
+
+<section id="dlg" aria-live="polite">
+  <div class="inner">
+    <div id="transit" hidden></div>
+    <div id="flow"></div>
+    <div class="who" id="who">Skyrealm</div>
+    <p id="txt"></p>
+    <div class="ctl">
+      <span id="stepn"></span>
+      <button id="bPause" class="btn">Pause <kbd>Space</kbd></button>
+      <button id="bNext" class="btn pri" disabled>Continue <kbd>→</kbd></button>
+      <label><input type="checkbox" id="cAuto" checked> Auto-advance</label>
+      <select id="sSpeed" aria-label="Simulation speed"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+      <label class="opt"><input type="checkbox" id="cFollow"> Follow packet <kbd>F</kbd></label>
+      <label class="opt"><input type="checkbox" id="cAmb" checked> Ambient traffic</label>
+      <label class="opt"><input type="checkbox" id="cLbl" checked> Labels</label>
+      <button id="bLog" class="btn opt">Packet log</button>
+      <button id="bHome" class="btn">Reset view</button>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const V = THREE.Vector3;
+const rand = (a, b) => a + Math.random() * (b - a);
+const hex = c => '#' + c.toString(16).padStart(6, '0');
+const esc = s => String(s).replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ---------- protocols ("elements") ----------
+const PROTO = {
+  REST:    { c: 0x5fe0c5, name: 'HTTPS REST',  el: 'Anemo',   desc: 'Request to kube-apiserver (JSON/protobuf over TLS, :6443)' },
+  WATCH:   { c: 0x4cc2ff, name: 'Watch event', el: 'Hydro',   desc: 'Event pushed down a long-lived HTTP/2 watch stream' },
+  GRPC:    { c: 0xf3c04b, name: 'etcd gRPC',   el: 'Geo',     desc: 'kube-apiserver ↔ etcd v3 KV API (:2379)' },
+  RAFT:    { c: 0xff7a4d, name: 'Raft',        el: 'Pyro',    desc: 'etcd peer replication: AppendEntries, acks (:2380)' },
+  CRI:     { c: 0xb57cff, name: 'CRI gRPC',    el: 'Electro', desc: 'kubelet → containerd over /run/containerd/containerd.sock' },
+  OCI:     { c: 0xff9fd0, name: 'OCI pull',    el: 'Electro', desc: 'Image manifest and layer blobs from a registry' },
+  HTTP:    { c: 0x9be05a, name: 'App HTTP',    el: 'Dendro',  desc: 'Your users\' traffic to workloads' },
+  DNS:     { c: 0xbff0ff, name: 'DNS',         el: 'Cryo',    desc: 'UDP :53 query to CoreDNS' },
+  VXLAN:   { c: 0x8a7bff, name: 'VXLAN',       el: 'Abyss',   desc: 'Pod packet wrapped in UDP :8472 node-to-node' },
+  PROBE:   { c: 0xd6f56a, name: 'Probe',       el: 'Dendro',  desc: 'kubelet health check into a container' },
+  METRICS: { c: 0xffe08a, name: 'Metrics',     el: 'Geo',     desc: 'Prometheus / metrics-server scrapes' },
+  GIT:     { c: 0xf05133, name: 'Git',         el: 'Pyro',    desc: 'git push / fetch (smart HTTP) and repo webhooks' },
+  RPC:     { c: 0xffc29a, name: 'Internal gRPC', el: 'Anemo', desc: 'Between a tool\'s own components (e.g. Argo CD)' },
+  HOOK:    { c: 0xe86bff, name: 'Admission webhook', el: 'Electro', desc: 'apiserver → webhook AdmissionReview (HTTPS)' },
+  CSI:     { c: 0xd9c08f, name: 'CSI / cloud API', el: 'Geo',  desc: 'Volume create / attach / mount calls' },
+};
+
+// ---------- renderer / scene ----------
+const canvas = $('#world');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xc7d8f0, 300, 950);
+const camera = new THREE.PerspectiveCamera(46, 1, 0.5, 4000);
+const HOME = { pos: new V(0, 105, 215), target: new V(0, 8, 0) };
+camera.position.copy(HOME.pos);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.target.copy(HOME.target);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 8; controls.maxDistance = 460; controls.maxPolarAngle = Math.PI * 0.66;
+controls.autoRotate = !REDUCED; controls.autoRotateSpeed = 0.35;
+function resize() { const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+addEventListener('resize', resize); resize();
+
+scene.add(new THREE.HemisphereLight(0xe4f0ff, 0x6d5a86, 0.8));
+const sunLight = new THREE.DirectionalLight(0xfff0d4, 0.85); sunLight.position.set(140, 220, 90); scene.add(sunLight);
+
+const sky = new THREE.Mesh(new THREE.SphereGeometry(1800, 32, 16), new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { sunDir: { value: new V(0.45, 0.32, -0.83).normalize() } },
+  vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform vec3 sunDir; varying vec3 vP;
+    void main(){ float h = vP.y;
+      vec3 top = vec3(.15,.31,.66), mid = vec3(.46,.67,.93), hor = vec3(1.,.87,.73), low = vec3(.66,.73,.9);
+      vec3 c = h > 0. ? mix(mix(hor, mid, smoothstep(0., .2, h)), top, smoothstep(.2, .95, h)) : mix(hor, low, smoothstep(0., -.3, h));
+      float s = max(dot(vP, sunDir), 0.);
+      c += vec3(1., .86, .62) * (pow(s, 700.) * 2.5 + pow(s, 14.) * .35);
+      gl_FragColor = vec4(c, 1.); }`,
+}));
+sky.raycast = () => {};
+scene.add(sky);
+
+// ---------- materials ----------
+const gradMap = new THREE.DataTexture(new Uint8Array([105, 180, 255]), 3, 1, THREE.LuminanceFormat);
+gradMap.minFilter = gradMap.magFilter = THREE.NearestFilter; gradMap.generateMipmaps = false; gradMap.needsUpdate = true;
+const matCache = {};
+function toon(color, extra) {
+  if (!extra) return matCache[color] || (matCache[color] = new THREE.MeshToonMaterial({ color, gradientMap: gradMap }));
+  return new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: gradMap }, extra));
+}
+const OUTLINE = new THREE.MeshBasicMaterial({ color: 0x2b2440, side: THREE.BackSide });
+function M(geo, color, parent, x = 0, y = 0, z = 0, o = {}) {
+  const m = new THREE.Mesh(geo, o.mat || toon(color, o.extra));
+  m.position.set(x, y, z);
+  if (o.outline !== false) { const ol = new THREE.Mesh(geo, OUTLINE); ol.scale.setScalar(o.ow || 1.06); ol.raycast = () => {}; m.add(ol); }
+  parent.add(m); return m;
+}
+const glowTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d');
+  const r = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.22, 'rgba(255,255,255,.7)'); r.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c);
+})();
+function glow(color, size, opacity = 1) {
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color, transparent: true, opacity, blending: THREE.AdditiveBlending, depthWrite: false }));
+  s.scale.setScalar(size); return s;
+}
+const basic = (color, extra) => new THREE.MeshBasicMaterial(Object.assign({ color }, extra));
+
+// ---------- sim clock ----------
+let simT = 0, speed = 1, paused = false;
+let waiters = [];
+const wait = ms => new Promise(res => waiters.push({ t: simT + ms, res }));
+const tweens = [];
+function tween(dur, fn, done) { tweens.push({ t: 0, dur, fn, done }); }
+const ease = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const backOut = t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
+
+// ---------- decor ----------
+const bobbers = [], spinners = [], clouds = [];
+const wfMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false, side: THREE.DoubleSide, uniforms: { t: { value: 0 } },
+  vertexShader: 'varying vec2 vU; void main(){ vU = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+  fragmentShader: `uniform float t; varying vec2 vU;
+    void main(){ float s = fract(vU.y * 5. + t * .9 + sin(vU.x * 18.) * .06);
+      float a = (.5 + .4 * smoothstep(.75, .95, s)) * smoothstep(0., .45, vU.y) * smoothstep(0., .12, vU.x) * smoothstep(1., .88, vU.x);
+      gl_FragColor = vec4(mix(vec3(.62,.84,1.), vec3(1.), smoothstep(.75,.95,s)), a); }`,
+});
+function waterfall(parent, r, ang, w, h) {
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), wfMat); m.raycast = () => {};
+  m.position.set(Math.cos(ang) * (r + .25), -h / 2 + .1, Math.sin(ang) * (r + .25));
+  m.rotation.y = Math.atan2(Math.cos(ang), Math.sin(ang)); parent.add(m);
+  const mist = glow(0xffffff, 16, .45); mist.position.set(Math.cos(ang) * (r + 2), -h + 2, Math.sin(ang) * (r + 2)); mist.raycast = () => {}; parent.add(mist);
+}
+function tree(parent, x, z, s) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.scale.setScalar(s); parent.add(g);
+  M(new THREE.CylinderGeometry(.35, .5, 2.4, 6), 0x8a5a3c, g, 0, 1.2, 0);
+  M(new THREE.IcosahedronGeometry(1.9, 0), 0x5aa85a, g, 0, 3.6, 0, { extra: { flatShading: true } });
+  M(new THREE.IcosahedronGeometry(1.3, 0), 0x7cc66a, g, .6, 4.9, .3, { extra: { flatShading: true } });
+}
+function island(pos, r, o = {}) {
+  const g = new THREE.Group(); g.position.copy(pos); scene.add(g);
+  M(new THREE.CylinderGeometry(r, r * .97, 1.6, 48), o.grass || 0x8ccc6c, g, 0, -.8, 0, { outline: false });
+  M(new THREE.CylinderGeometry(r * .97, r * .86, 3.2, 48), 0xd4a97c, g, 0, -3.2, 0, { outline: false });
+  const h = r * 1.55, cg = new THREE.ConeGeometry(r * .86, h, 18, 6), p = cg.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    if (y < -h / 2 + .01) continue; // keep the rim round so it meets the dirt band
+    const k = 1 + .2 * Math.sin(x * .9 + y * .7) * Math.cos(z * .8 - y * .5);
+    p.setXYZ(i, x * k, y, z * k);
+  }
+  cg.computeVertexNormals();
+  M(cg, o.rock || 0x8b6d62, g, 0, -4.8 - h / 2, 0, { outline: false, extra: { flatShading: true } }).rotation.x = Math.PI;
+  for (const [a, s] of o.trees || []) tree(g, Math.cos(a) * r * .86, Math.sin(a) * r * .86, s);
+  for (let i = 0; i < (o.rocks ?? 5); i++) {
+    const a = rand(0, Math.PI * 2), d = rand(r * 1.05, r * 1.5);
+    const m = M(new THREE.DodecahedronGeometry(rand(.8, 2.2), 0), 0x9b7f71, g, Math.cos(a) * d, rand(-12, -2), Math.sin(a) * d, { extra: { flatShading: true } });
+    bobbers.push({ o: m, y: m.position.y, ph: rand(0, 6), amp: rand(.4, 1.1) });
+  }
+  const crys = M(new THREE.OctahedronGeometry(r * .07, 0), o.crystal || 0x8fe3ff, g, 0, -4.8 - h - 1.5, 0, { mat: basic(o.crystal || 0x8fe3ff) });
+  crys.scale.y = 1.8; spinners.push({ o: crys, s: .0006 });
+  const cg2 = glow(o.crystal || 0x8fe3ff, r * .5, .5); cg2.position.copy(crys.position); cg2.raycast = () => {}; g.add(cg2);
+  return g;
+}
+function cloud(x, y, z, s) {
+  const g = new THREE.Group(); g.position.set(x, y, z); scene.add(g);
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Mesh(CLOUD_GEO, toon(0xfdfcff)); m.raycast = () => {};
+    m.scale.setScalar(rand(3, 6) * s); m.position.set(rand(-8, 8) * s, rand(-1, 2) * s, rand(-4, 4) * s); g.add(m);
+  }
+  clouds.push(g);
+}
+const CLOUD_GEO = new THREE.SphereGeometry(1, 14, 10);
+for (let i = 0; i < 70; i++) cloud(rand(-420, 420), rand(-70, -38), rand(-380, 300), rand(.8, 1.6));
+for (let i = 0; i < 16; i++) { const a = rand(0, Math.PI * 2), d = rand(360, 600); cloud(Math.cos(a) * d, rand(40, 120), Math.sin(a) * d, rand(1.4, 2.6)); }
+const PN = 450, pPos = new Float32Array(PN * 3);
+for (let i = 0; i < PN; i++) { pPos[i * 3] = rand(-170, 170); pPos[i * 3 + 1] = rand(-30, 100); pPos[i * 3 + 2] = rand(-150, 150); }
+const pGeo = new THREE.BufferGeometry(); pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+const motes = new THREE.Points(pGeo, new THREE.PointsMaterial({ map: glowTex, size: 1.5, color: 0xfff0c0, transparent: true, opacity: .75, depthWrite: false, blending: THREE.AdditiveBlending }));
+motes.raycast = () => {}; scene.add(motes);
+
+// ---------- component registry ----------
+const C = {};
+const labelLayer = $('#labels');
+function mkLabel(key, name, sub, cls = '') {
+  const d = document.createElement('div'); d.className = 'lbl ' + cls;
+  d.innerHTML = `<b>${esc(name)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}`;
+  d.addEventListener('click', e => { e.stopPropagation(); select(key, true); });
+  labelLayer.appendChild(d); return d;
+}
+function reg(key, name, obj, o = {}) {
+  const c = Object.assign({ key, name, obj, anchorY: 4, labelY: 2.5, glowSize: 7, pulse: 0, maxD: 330, disp: name }, o);
+  obj.traverse(m => { if (m.isMesh) m.userData.key = key; });
+  c.glow = glow(0xffffff, c.glowSize, 0); c.glow.position.y = c.anchorY; c.glow.raycast = () => {}; obj.add(c.glow);
+  if (o.label !== false) c.label = mkLabel(key, name, o.sub, o.labelClass);
+  return (C[key] = c);
+}
+function unreg(key) { const c = C[key]; if (!c) return; c.label && c.label.remove(); delete C[key]; }
+const _v = new V();
+function anchor(key) { const c = C[key]; if (!c) return null; c.obj.updateWorldMatrix(true, false); return c.obj.localToWorld(new V(0, c.anchorY, 0)); }
+function pulse(key, color) { const c = C[key]; if (!c) return; c.glow.material.color.setHex(color); c.pulse = 1; }
+
+// ---------- control plane island ----------
+const CP_POS = new V(0, 34, -44);
+const cp = island(CP_POS, 27, { grass: 0x9ad47c, trees: [[.25, 1.1], [1.0, .9], [2.05, 1], [2.75, 1.2], [3.5, 1], [4.3, 1.15], [5.2, .9], [5.9, 1.05]], rocks: 8, crystal: 0x7ff0d8 });
+waterfall(cp, 27, 2.3, 7, 60); waterfall(cp, 27, .75, 5, 46);
+
+// kube-apiserver tower with three gate rings
+const api = new THREE.Group(); api.position.set(0, 0, 5); cp.add(api);
+M(new THREE.CylinderGeometry(4, 4.8, 2.4, 8), 0xe6dcc6, api, 0, 1.2, 0);
+M(new THREE.CylinderGeometry(2.3, 3, 14, 8), 0xf7f2e7, api, 0, 9.4, 0);
+M(new THREE.CylinderGeometry(3.2, 2.5, 1.4, 8), 0xd3bc8e, api, 0, 17, 0);
+M(new THREE.ConeGeometry(2.6, 3.4, 8), 0x4f8f8a, api, 0, 19.4, 0);
+const apiCrystal = M(new THREE.OctahedronGeometry(1.6, 0), 0x5fe0c5, api, 0, 23.3, 0, { mat: basic(0x7ff6dc) });
+apiCrystal.scale.y = 1.6; spinners.push({ o: apiCrystal, s: .0012 });
+const apiCg = glow(0x5fe0c5, 12, .7); apiCg.position.y = 23.3; apiCg.raycast = () => {}; api.add(apiCg);
+const gateRings = [5.5, 9.2, 12.9].map((y, i) => {
+  const r = new THREE.Mesh(new THREE.TorusGeometry(4.1, .26, 8, 40), basic(0xd3bc8e)); r.position.y = y; r.rotation.x = Math.PI / 2; api.add(r);
+  return { m: r, flash: 0, base: new THREE.Color(0xd3bc8e) };
+});
+function flashGate(i) { gateRings[i].flash = 1; }
+reg('api', 'kube-apiserver', api, { kind: 'api', sub: 'the front desk', anchorY: 11, labelY: 15, glowSize: 16, labelClass: 'big' });
+
+// etcd trio (Raft)
+const etcdG = new THREE.Group(); etcdG.position.set(-15, 0, -5); cp.add(etcdG);
+M(new THREE.CylinderGeometry(7.2, 7.8, .8, 6), 0xcbbd9f, etcdG, 0, .4, 0, { outline: false });
+[[0, 0, 3.6, 'etcd0', 'etcd-0', 'leader'], [-3.6, 0, -2.6, 'etcd1', 'etcd-1', 'follower'], [3.6, 0, -2.6, 'etcd2', 'etcd-2', 'follower']].forEach(([x, , z, key, name, role]) => {
+  const g = new THREE.Group(); g.position.set(x, .8, z); etcdG.add(g);
+  M(new THREE.CylinderGeometry(1.4, 1.7, 1.8, 6), 0x8d7a66, g, 0, .9, 0);
+  const cr = M(new THREE.OctahedronGeometry(1.5, 0), 0xf3c04b, g, 0, 4.4, 0, { extra: { emissive: 0x5a3d00 } }); cr.scale.y = 1.9;
+  spinners.push({ o: cr, s: .0008 });
+  if (role === 'leader') {
+    const crown = new THREE.Mesh(new THREE.TorusGeometry(1.4, .16, 6, 24), basic(0xfff1b8)); crown.position.y = 8; crown.rotation.x = Math.PI / 2; g.add(crown);
+    bobbers.push({ o: crown, y: 8, ph: 0, amp: .25 });
+  }
+  reg(key, name, g, { kind: 'etcd', role, sub: role === 'leader' ? 'cluster memory · leader' : 'cluster memory · copy', anchorY: 4.4, labelY: 5, glowSize: 8 });
+});
+
+// kube-scheduler observatory
+const sch = new THREE.Group(); sch.position.set(15, 0, -5); cp.add(sch);
+M(new THREE.CylinderGeometry(4.6, 5, 5, 12), 0xefe6d2, sch, 0, 2.5, 0);
+M(new THREE.SphereGeometry(4.4, 18, 10, 0, Math.PI * 2, 0, Math.PI / 2), 0x5b7fc4, sch, 0, 5, 0);
+const scope = new THREE.Group(); scope.position.y = 7.4; sch.add(scope);
+M(new THREE.CylinderGeometry(.55, .9, 7, 10), 0xd3bc8e, scope, 0, 1.4, 2.4).rotation.x = Math.PI / 2.8;
+let scopeYaw = 0;
+function aimScope(key) { const a = anchor(key); if (!a) return; sch.worldToLocal(a); scopeYaw = Math.atan2(a.x, a.z); }
+reg('sched', 'kube-scheduler', sch, { kind: 'sched', sub: 'picks a node for each Pod', anchorY: 7, labelY: 6, glowSize: 12 });
+
+// kube-controller-manager clockwork
+const kcm = new THREE.Group(); kcm.position.set(0, 0, -16); cp.add(kcm);
+M(new THREE.BoxGeometry(15, 13, 2.2), 0x6d5d7e, kcm, 0, 6.5, -1);
+M(new THREE.BoxGeometry(16, 1.2, 3), 0xd3bc8e, kcm, 0, 13.4, -1);
+const GEARS = {};
+function gear(name, x, y, r, color, teeth) {
+  const g = new THREE.Group(); g.position.set(x, y, 1); kcm.add(g);
+  M(new THREE.CylinderGeometry(r, r, .8, 28), color, g).rotation.x = Math.PI / 2;
+  for (let i = 0; i < teeth; i++) { const a = i / teeth * Math.PI * 2; M(new THREE.BoxGeometry(.85, .85, .8), color, g, Math.cos(a) * (r + .3), Math.sin(a) * (r + .3), 0, { outline: false }).rotation.z = a; }
+  M(new THREE.CylinderGeometry(r * .35, r * .35, 1.3, 12), 0x3d3348, g).rotation.x = Math.PI / 2;
+  GEARS[name] = { g, base: (teeth % 2 ? -1 : 1) * .0006 * (3 / r), boost: 0 };
+}
+gear('deployment', -3.6, 9, 2.7, 0xd3bc8e, 12);
+gear('replicaset', 1.9, 10.3, 2.1, 0xe2c27a, 9);
+gear('endpointslice', 4.9, 6.2, 1.9, 0xc9a96e, 9);
+gear('nodelifecycle', -1.2, 4.2, 2.3, 0xbfa070, 11);
+gear('hpa', 3.2, 2.6, 1.3, 0xe8d29a, 7);
+function spin(name) { GEARS[name].boost = 1; }
+reg('kcm', 'kube-controller-manager', kcm, { kind: 'kcm', sub: 'fixes drift from what you asked', anchorY: 8, labelY: 8, glowSize: 16 });
+
+// ---------- worker nodes ----------
+const NODES = [
+  { key: 'n1', name: 'node-1', ip: '192.168.1.11', cidr: '10.244.1.0/24', pos: new V(-62, 0, 16) },
+  { key: 'n2', name: 'node-2', ip: '192.168.1.12', cidr: '10.244.2.0/24', pos: new V(0, -5, 42) },
+  { key: 'n3', name: 'node-3', ip: '192.168.1.13', cidr: '10.244.3.0/24', pos: new V(62, 0, 16) },
+  { key: 'n4', name: 'node-4', ip: '192.168.1.14', cidr: '10.244.4.0/24', pos: new V(-108, 22, -62), pool: 'platform' },
+];
+const NODE = Object.fromEntries(NODES.map(n => [n.key, n]));
+const SLOTS = [[-9, -1], [0, -1], [9, -1], [-9, 6.5], [0, 6.5], [9, 6.5]];
+for (const N of NODES) {
+  const g = N.group = island(N.pos, 19, { trees: [[.15, .9], [2.95, 1], [3.7, .85], [4.45, 1.05], [5.1, .9], [5.85, 1]], crystal: 0xb5a6ff });
+  reg(N.key, N.name, g, { kind: 'node', node: N.key, sub: N.pool ? 'platform machine' : 'worker machine', anchorY: 13, labelY: 1, glowSize: 40, labelClass: 'big' });
+  // kubelet shrine
+  const kb = new THREE.Group(); kb.position.set(0, 0, -12); g.add(kb);
+  M(new THREE.BoxGeometry(5.2, 3.4, 4.2), 0xf4ead5, kb, 0, 1.7, 0);
+  M(new THREE.ConeGeometry(4.6, 2.8, 4), 0x3e70a6, kb, 0, 4.8, 0).rotation.y = Math.PI / 4;
+  M(new THREE.BoxGeometry(1.4, 2, .3), 0xffd27a, kb, 0, 1, 2.15, { outline: false, mat: basic(0xffd27a) });
+  N.lantern = glow(0xffcc66, 5, .8); N.lantern.position.set(0, 1.2, 2.6); N.lantern.raycast = () => {}; kb.add(N.lantern);
+  reg(N.key + '.kubelet', 'kubelet', kb, { kind: 'kubelet', node: N.key, disp: 'kubelet@' + N.name, sub: 'node caretaker', anchorY: 3.5, labelY: 3.6, maxD: 190 });
+  // containerd forge
+  const cd = new THREE.Group(); cd.position.set(-11.5, 0, -7.5); g.add(cd);
+  M(new THREE.CylinderGeometry(2.6, 3, 2.2, 8), 0x6e6170, cd, 0, 1.1, 0);
+  M(new THREE.BoxGeometry(3, 1, 1.6), 0x4a4250, cd, 0, 2.7, 0);
+  M(new THREE.BoxGeometry(1.4, 1.2, 1.2), 0x4a4250, cd, 0, 3.6, 0, { outline: false });
+  const fire = glow(0xff8a3d, 6, .8); fire.position.set(0, 2.6, 1.8); fire.raycast = () => {}; cd.add(fire); N.fire = fire;
+  reg(N.key + '.containerd', 'containerd', cd, { kind: 'containerd', node: N.key, disp: 'containerd@' + N.name, sub: 'starts containers', anchorY: 3, labelY: 3, maxD: 190 });
+  // kube-proxy torii (the netfilter rules it programs)
+  const tp = new THREE.Group(); tp.position.set(11.5, 0, -7.5); g.add(tp);
+  for (const x of [-2.4, 2.4]) M(new THREE.CylinderGeometry(.42, .5, 6.4, 10), 0xd2463c, tp, x, 3.2, 0);
+  M(new THREE.BoxGeometry(7.6, .6, 1), 0x2f2a36, tp, 0, 6.7, 0);
+  M(new THREE.BoxGeometry(6.2, .45, .7), 0xd2463c, tp, 0, 5.3, 0);
+  N.rules = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), basic(0xffb08a, { transparent: true, opacity: 0, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
+  N.rules.position.y = 3; tp.add(N.rules);
+  reg(N.key + '.proxy', 'kube-proxy', tp, { kind: 'proxy', sub: 'traffic rules', node: N.key, disp: 'netfilter@' + N.name, anchorY: 3.4, labelY: 4.4, maxD: 190 });
+  // flannel.1 VXLAN portal
+  const vt = new THREE.Group(); vt.position.set(0, 0, 14.5); g.add(vt);
+  M(new THREE.CylinderGeometry(1.8, 2.2, 1, 8), 0x7b6e8e, vt, 0, .5, 0);
+  const ring = M(new THREE.TorusGeometry(2.4, .35, 8, 28), 0x8a7bff, vt, 0, 3.9, 0, { mat: basic(0xa79cff) });
+  spinners.push({ o: ring, s: .001, axis: 'z' });
+  const vg = glow(0x8a7bff, 7, .55); vg.position.y = 3.9; vg.raycast = () => {}; vt.add(vg);
+  reg(N.key + '.vtep', 'flannel tunnel', vt, { kind: 'vtep', node: N.key, disp: 'flannel.1@' + N.name, sub: 'to other nodes', anchorY: 3.9, labelY: 3.2, maxD: 190 });
+  // down-state dome
+  N.dome = new THREE.Mesh(new THREE.SphereGeometry(21, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), basic(0x3a2a5a, { transparent: true, opacity: .45, depthWrite: false }));
+  N.dome.visible = false; N.dome.raycast = () => {}; g.add(N.dome);
+  N.up = true;
+}
+
+// ---------- edge island: you + load balancer ----------
+const edge = island(new V(0, 12, 110), 12, { trees: [[.4, .8], [2.7, .9], [3.9, .8]], rocks: 3 });
+const lb = new THREE.Group(); lb.position.set(0, 0, -5); edge.add(lb);
+for (const x of [-5, 5]) M(new THREE.BoxGeometry(1.6, 7, 1.6), 0xece2cc, lb, x, 3.5, 0);
+M(new THREE.TorusGeometry(5, .8, 8, 20, Math.PI), 0xd3bc8e, lb, 0, 7, 0);
+const lbGlow = glow(0x9be05a, 9, .35); lbGlow.position.y = 4; lbGlow.raycast = () => {}; lb.add(lbGlow);
+reg('lb', 'Cloud Load Balancer', lb, { kind: 'lb', sub: 'internet entrance', anchorY: 5, labelY: 5.5 });
+const you = new THREE.Group(); you.position.set(0, 0, 5); edge.add(you);
+M(new THREE.CylinderGeometry(.7, 1.1, 2.6, 10), 0x3c5aa8, you, 0, 1.3, 0);
+M(new THREE.SphereGeometry(.85, 14, 10), 0xffe3c8, you, 0, 3.3, 0);
+M(new THREE.ConeGeometry(1.1, 1.2, 10), 0xf2dca8, you, 0, 4.2, 0);
+const youG = glow(0xf2dca8, 6, .5); youG.position.y = 2.5; youG.raycast = () => {}; you.add(youG);
+bobbers.push({ o: youG, y: 2.5, ph: 0, amp: .3 });
+reg('you', 'You', you, { kind: 'you', sub: 'kubectl · browser · git', anchorY: 3, labelY: 3 });
+
+// ---------- registry island ----------
+const regI = island(new V(104, 26, -56), 12, { grass: 0xa6d27e, trees: [[1, .9], [4, .8]], rocks: 3, crystal: 0xff9fd0 });
+const rg = new THREE.Group(); regI.add(rg);
+[[0, 0, 0, 0xff9fd0], [3.2, 0, .5, 0xd6b0ff], [-3, 0, .2, 0xffd2a6], [0, 2.8, .2, 0xf8c6e0], [1.6, 5.4, 0, 0xffb5d5]].forEach(([x, y, z, c]) =>
+  M(new THREE.BoxGeometry(2.8, 2.6, 2.8), c, rg, x, y + 1.3, z).rotation.y = rand(-.3, .3));
+reg('registry', 'registry.realm.io', rg, { kind: 'registry', sub: 'stores app images', anchorY: 4, labelY: 5 });
+
+// ---------- persistent streams (watch connections, etcd link, VXLAN tunnels) ----------
+function curve(a, b) {
+  const d = a.distanceTo(b), mid = a.clone().add(b).multiplyScalar(.5); mid.y += d * .2 + 2;
+  return new THREE.QuadraticBezierCurve3(a, mid, b);
+}
+const streams = [];
+function stream(a, b, color, o = {}) {
+  const cv = curve(anchor(a), anchor(b)), len = cv.getLength();
+  const mat = new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false,
+    uniforms: { t: { value: 0 }, c: { value: new THREE.Color(color) }, rep: { value: len / 5 }, a: { value: o.a || .5 } },
+    vertexShader: 'varying vec2 vU; void main(){ vU = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }',
+    fragmentShader: `uniform float t, rep, a; uniform vec3 c; varying vec2 vU;
+      void main(){ float d = fract(vU.x * rep - t); float k = (.22 + .6 * smoothstep(0., .12, d) * smoothstep(.45, .12, d)) * a; gl_FragColor = vec4(c, k); }`,
+  });
+  const m = new THREE.Mesh(new THREE.TubeGeometry(cv, 64, o.r || .16, 5, false), mat); m.raycast = () => {};
+  scene.add(m); streams.push({ m, nodes: o.nodes || [] }); return m;
+}
+scene.updateMatrixWorld(true);
+stream('api', 'etcd0', PROTO.GRPC.c, { a: .7 });
+stream('etcd0', 'etcd1', PROTO.RAFT.c, { a: .45 }); stream('etcd0', 'etcd2', PROTO.RAFT.c, { a: .45 });
+stream('api', 'kcm', PROTO.WATCH.c); stream('api', 'sched', PROTO.WATCH.c);
+for (const N of NODES) {
+  stream('api', N.key + '.kubelet', PROTO.WATCH.c, { a: .35, nodes: [N.key] });
+  stream('api', N.key + '.proxy', PROTO.WATCH.c, { a: .25, nodes: [N.key] });
+}
+stream('n1.vtep', 'n2.vtep', PROTO.VXLAN.c, { r: .3, a: .4, nodes: ['n1', 'n2'] });
+stream('n2.vtep', 'n3.vtep', PROTO.VXLAN.c, { r: .3, a: .4, nodes: ['n2', 'n3'] });
+stream('n1.vtep', 'n3.vtep', PROTO.VXLAN.c, { r: .3, a: .3, nodes: ['n1', 'n3'] });
+stream('n4.vtep', 'n1.vtep', PROTO.VXLAN.c, { r: .3, a: .3, nodes: ['n4', 'n1'] });
+stream('you', 'lb', PROTO.HTTP.c, { a: .3 });
+
+// ---------- pods ----------
+const APP = {
+  web:      { c: 0x6ec6ff, img: 'registry.realm.io/shop/web:2.3.0', port: 8080 },
+  orders:   { c: 0xffb26b, img: 'registry.realm.io/shop/orders:3.0.1', port: 8080 },
+  checkout: { c: 0xff8fb1, img: 'registry.realm.io/shop/checkout:1.4.2', port: 8080 },
+  coredns:  { c: 0xbff0ff, img: 'registry.k8s.io/coredns/coredns:v1.11.1', port: 53, ns: 'kube-system' },
+  ingress:  { c: 0x9be05a, img: 'registry.k8s.io/ingress-nginx/controller:v1.11.2', port: 443, ns: 'ingress-nginx' },
+  metrics:  { c: 0xffe08a, img: 'registry.k8s.io/metrics-server/metrics-server:v0.7.2', port: 10250, ns: 'kube-system' },
+};
+const pods = {};
+const PAUSE_GEO = new THREE.BoxGeometry(.9, .9, .9), APPC_GEO = new THREE.BoxGeometry(1.9, 2.5, 1.9), BASE_GEO = new THREE.CylinderGeometry(3.1, 3.3, .7, 6), RING_GEO = new THREE.TorusGeometry(3.05, .13, 6, 6);
+function spawnPod(alias, node, slot, name, app, ip, phase = 'running') {
+  const N = NODE[node], A = APP[app], g = new THREE.Group(), [x, z] = SLOTS[slot];
+  g.position.set(x, 0, z); N.group.add(g);
+  const mats = [];
+  const tm = c => { const m = toon(c, { transparent: true }); mats.push(m); return m; };
+  const base = new THREE.Mesh(BASE_GEO, tm(0xece5d4)); base.position.y = .35; g.add(base);
+  const ring = new THREE.Mesh(RING_GEO, basic(A.c, { transparent: true })); ring.position.y = .74; ring.rotation.set(Math.PI / 2, 0, Math.PI / 6); g.add(ring); mats.push(ring.material);
+  const pause = new THREE.Mesh(PAUSE_GEO, tm(0x9a94a6)); pause.position.set(-1.7, 1.15, -1); g.add(pause);
+  const box = new THREE.Group(); box.position.set(.5, .7, .3); g.add(box);
+  const appM = new THREE.Mesh(APPC_GEO, tm(A.c)); appM.position.y = 1.25; box.add(appM);
+  const win = new THREE.Mesh(new THREE.PlaneGeometry(1.3, .45), basic(0xffffff, { transparent: true, opacity: .85 })); win.position.set(0, 1.7, .96); box.add(win); mats.push(win.material);
+  const p = { alias, node, slot, name, app, ip, g, mats, box, appM, restarts: 0, born: new Date() };
+  pods[alias] = p;
+  reg('pod:' + alias, name.replace(/-[a-z0-9]{5,10}-[a-z0-9]{5}$/, ''), g, { kind: 'pod', pod: alias, node, disp: name, sub: 'Pod', anchorY: 2.4, labelY: 2.6, maxD: 150, labelClass: 'pod', glowSize: 9 });
+  setPhase(alias, phase);
+  g.scale.setScalar(.01);
+  tween(700, t => g.scale.setScalar(Math.max(.01, backOut(t))));
+  return p;
+}
+function setPhase(alias, phase) {
+  const p = pods[alias]; if (!p) return; p.phase = phase;
+  const op = phase === 'ghost' ? .28 : phase === 'sandbox' ? .7 : 1;
+  p.mats.forEach(m => m.opacity = op);
+  p.box.visible = phase !== 'sandbox';
+  p.appM.material.color.setHex(phase === 'crash' ? 0xe0533f : APP[p.app].c);
+  if (phase === 'running' && p.box.visible) { p.box.scale.setScalar(.01); tween(500, t => p.box.scale.setScalar(Math.max(.01, backOut(t)))); }
+  const c = C['pod:' + alias]; if (c && c.label) c.label.classList.toggle('down', phase === 'crash' || phase === 'ghost');
+}
+function removePod(alias) {
+  const p = pods[alias]; if (!p) return; delete pods[alias]; unreg('pod:' + alias);
+  tween(450, t => p.g.scale.setScalar(Math.max(.01, 1 - t)), () => p.g.parent && p.g.parent.remove(p.g));
+}
+function setNodeUp(key, up) {
+  const N = NODE[key]; N.up = up; N.dome.visible = !up; N.lantern.visible = up; N.fire.visible = up;
+  streams.forEach(s => { if (s.nodes.length) s.m.visible = s.nodes.every(k => NODE[k].up); });
+  C[key].label.classList.toggle('down', !up);
+  C[key].label.querySelector('span').textContent = up ? (N.pool ? 'platform machine' : 'worker machine') : 'DOWN · not responding';
+}
+
+// ---------- packets ----------
+const PSPEED = 44;
+const packets = [];
+let pid = 0, focusPacket = null;
+const CORE_GEO = new THREE.OctahedronGeometry(.6, 0);
+const logEl = $('#log'), logN = $('#logn');
+const logged = [];
+function launch(o) {
+  return new Promise(res => {
+    if (!C[o.from] || !o.legs.length) return res();
+    const id = ++pid;
+    const g = new THREE.Group();
+    const core = new THREE.Mesh(CORE_GEO, basic(0xffffff)); core.scale.setScalar(o.ambient ? .55 : 1.5); g.add(core);
+    const halo = glow(0xffffff, o.ambient ? 2.2 : 7.5, o.ambient ? .75 : 1); g.add(halo);
+    scene.add(g);
+    const trail = [];
+    for (let i = 0; i < (o.ambient ? 4 : 12); i++) { const s = glow(0xffffff, (o.ambient ? 1.4 : 4) * (1 - i / 14), .55 * (1 - i / 10)); s.raycast = () => {}; scene.add(s); trail.push(s); }
+    const rec = { id, from: o.from, legs: o.legs, ambient: !!o.ambient, t: new Date(), li: 0 };
+    const p = { id, rec, g, core, halo, trail, hist: [], cur: o.from, li: 0, res, speed: o.speed || 1, ambient: !!o.ambient };
+    core.userData.packet = halo.userData.packet = rec;
+    if (!o.ambient) {
+      if (spot) { spot.add(o.from); o.legs.forEach(l => spot.add(l.to)); }
+      p.chip = document.createElement('div'); p.chip.className = 'pk'; labelLayer.appendChild(p.chip);
+      focusPacket = p; logPacket(rec);
+      burst(anchor(o.from), PROTO[o.legs[0].proto].c, true);
+    }
+    rec.live = p;
+    packets.push(p); startLeg(p);
+  });
+}
+const nm = k => { const c = C[k]; if (!c) return k.replace(/^pod:/, ''); return c.node && c.kind !== 'node' && c.kind !== 'pod' ? `${c.name} (${NODE[c.node].name})` : c.name; };
+const ROUTE_V = 'varying vec2 vU; void main(){ vU = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }';
+// traveled part solid, the part still ahead shows dashes flowing toward the destination
+const ROUTE_F = `uniform vec3 c; uniform float prog, t, rep, fade; varying vec2 vU;
+  void main(){ float d = fract(vU.x * rep - t); float dash = smoothstep(0., .08, d) * smoothstep(.55, .3, d);
+    float a = (vU.x < prog ? .95 : .3 + .7 * dash) * fade; gl_FragColor = vec4(mix(c, vec3(1.), vU.x < prog ? .0 : .25 * dash), a); }`;
+const fadingRoutes = [];
+function startLeg(p) {
+  const leg = p.rec.legs[p.li], a = anchor(p.cur), b = anchor(leg.to);
+  if (!a || !b) return finish(p);
+  p.curve = curve(a, b); p.len = Math.max(1, p.curve.getLength()); p.t = 0;
+  // quest hops take 1.5–3 s at 1× whatever the distance, so every message is readable
+  p.dur = p.ambient ? p.len / PSPEED * 1000 : Math.min(3000, Math.max(1500, p.len / PSPEED * 1400));
+  const col = PROTO[leg.proto].c;
+  p.core.material.color.setHex(col); p.halo.material.color.setHex(col); p.trail.forEach(s => s.material.color.setHex(col));
+  p.rec.li = p.li;
+  if (!p.ambient) {
+    p.route = new THREE.Mesh(new THREE.TubeGeometry(p.curve, 80, .6, 8, false), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, vertexShader: ROUTE_V, fragmentShader: ROUTE_F,
+      uniforms: { c: { value: new THREE.Color(col) }, prog: { value: 0 }, t: { value: 0 }, rep: { value: p.len / 3.5 }, fade: { value: 1 } } }));
+    p.route.raycast = () => {}; scene.add(p.route);
+  }
+  if (p.chip) {
+    p.chip.style.setProperty('--pc', hex(col));
+    p.chip.innerHTML = `<b>${leg.proto}</b>${esc(leg.label)}<small>${esc(nm(p.cur))} → ${esc(nm(leg.to))}</small>`;
+  }
+  renderTransit();
+}
+function retireRoute(p) { if (p.route) { p.route.material.uniforms.prog.value = 1; fadingRoutes.push({ m: p.route, life: 1 }); p.route = null; } }
+function updateRoutes(ds) {
+  for (const p of packets) if (p.route) { const u = p.route.material.uniforms; u.prog.value = p.t; u.t.value += ds * .0015; }
+  for (let i = fadingRoutes.length - 1; i >= 0; i--) {
+    const f = fadingRoutes[i]; f.life -= ds / 2600; f.m.material.uniforms.fade.value = Math.max(0, f.life);
+    if (f.life <= 0) { scene.remove(f.m); f.m.geometry.dispose(); fadingRoutes.splice(i, 1); }
+  }
+}
+const ringTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.strokeStyle = '#fff'; g.lineWidth = 9; g.shadowColor = '#fff'; g.shadowBlur = 14;
+  g.beginPath(); g.arc(64, 64, 48, 0, Math.PI * 2); g.stroke(); return new THREE.CanvasTexture(c);
+})();
+const bursts = [];
+function burst(pos, color, out) {
+  if (!pos) return;
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: ringTex, color, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  sp.position.copy(pos); sp.raycast = () => {}; scene.add(sp); bursts.push({ sp, t: 0, out });
+}
+function updateBursts(ds) {
+  for (let i = bursts.length - 1; i >= 0; i--) {
+    const b = bursts[i]; b.t += ds / 900;
+    b.sp.scale.setScalar(b.out ? 2 + b.t * 9 : 11 - b.t * 8); b.sp.material.opacity = b.out ? 1 - b.t : Math.sin(b.t * Math.PI);
+    if (b.t >= 1) { scene.remove(b.sp); bursts.splice(i, 1); }
+  }
+}
+const transitEl = document.getElementById('transit');
+function renderTransit() {
+  const live = packets.filter(p => !p.ambient);
+  if (!live.length) { transitEl.hidden = true; return; }
+  transitEl.hidden = false;
+  transitEl.innerHTML = '<em>In flight now</em>' + live.slice(0, 4).map(p => {
+    const leg = p.rec.legs[p.li], col = hex(PROTO[leg.proto].c);
+    return `<div style="--pc:${col}"><i></i><b>${esc(nm(p.cur))}</b> → <b>${esc(nm(leg.to))}</b><span>${esc(leg.label)} · ${PROTO[leg.proto].name}</span></div>`;
+  }).join('') + (live.length > 4 ? `<div class="more">+${live.length - 4} more</div>` : '');
+}
+function finish(p) {
+  const i = packets.indexOf(p); if (i >= 0) packets.splice(i, 1);
+  scene.remove(p.g); p.trail.forEach(s => scene.remove(s)); p.chip && p.chip.remove();
+  p.rec.live = null; if (focusPacket === p) focusPacket = null;
+  retireRoute(p);
+  p.res(); renderTransit();
+}
+function updatePackets(ds) {
+  for (let i = packets.length - 1; i >= 0; i--) {
+    const p = packets[i];
+    p.t += ds * p.speed / p.dur;
+    if (p.t >= 1) {
+      const leg = p.rec.legs[p.li];
+      pulse(leg.to, PROTO[leg.proto].c);
+      if (!p.ambient) { burst(anchor(leg.to), PROTO[leg.proto].c, false); retireRoute(p); }
+      if (leg.onArrive) leg.onArrive();
+      p.cur = leg.to; p.li++;
+      if (p.li >= p.rec.legs.length) { finish(p); continue; }
+      startLeg(p); if (!packets.includes(p)) continue;
+    }
+    const pos = p.curve.getPoint(Math.min(p.t, 1)); p.g.position.copy(pos);
+    if (ds > 0) { p.hist.unshift(pos.clone()); if (p.hist.length > p.trail.length * 2) p.hist.pop(); }
+    p.trail.forEach((s, j) => s.position.copy(p.hist[j * 2 + 1] || pos));
+    p.core.rotation.y += ds * .008; p.core.rotation.x += ds * .004;
+  }
+}
+function clearPackets() { [...packets].forEach(finish); fadingRoutes.forEach(f => scene.remove(f.m)); fadingRoutes.length = 0; }
+function logPacket(rec) {
+  logged.unshift(rec); if (logged.length > 150) { logged.pop(); logEl.lastChild && logEl.lastChild.remove(); }
+  const leg = rec.legs[0], last = rec.legs[rec.legs.length - 1];
+  const li = document.createElement('li');
+  li.innerHTML = `<span class="chip" style="--pc:${hex(PROTO[leg.proto].c)}">${leg.proto}</span><span>${esc(dispName(rec.from))} → ${esc(dispName(last.to))}</span><em>${esc(leg.label)}</em>`;
+  li.addEventListener('click', () => inspectPacket(rec));
+  logEl.prepend(li); logN.textContent = logged.length;
+}
+function clearLog() { logged.length = 0; logEl.innerHTML = ''; logN.textContent = '0'; }
+const dispName = k => C[k] ? C[k].disp : (k.startsWith('pod:') ? k.slice(4) + ' (gone)' : k);
+
+// ---------- callouts ----------
+const callouts = [];
+function say(key, html, ms = 2600, cls = '') {
+  if (spot) spot.add(key);
+  const d = document.createElement('div'); d.className = 'say ' + cls; d.innerHTML = html; labelLayer.appendChild(d);
+  callouts.push({ key, d, until: simT + ms });
+}
+function clearCallouts() { callouts.forEach(c => c.d.remove()); callouts.length = 0; }
+
+// ---------- labels / projection ----------
+let showLabels = true, spot = null;
+function place(el, v, dy = 0) {
+  const W = innerWidth, H = innerHeight; v.project(camera);
+  if (v.z > 1 || v.z < -1) { el.hidden = true; return false; }
+  el.hidden = false;
+  el.style.transform = `translate(${((v.x * .5 + .5) * W).toFixed(1)}px,${((-v.y * .5 + .5) * H + dy).toFixed(1)}px) translate(-50%,-100%)`;
+  return true;
+}
+function updateLabels() {
+  for (const k in C) {
+    const c = C[k]; if (!c.label) continue;
+    _v.set(0, c.anchorY + c.labelY, 0); c.obj.localToWorld(_v);
+    const d = _v.distanceTo(camera.position);
+    if (!showLabels || d > c.maxD || (spot && c.kind !== 'node' && !spot.has(k))) { c.label.hidden = true; continue; }
+    place(c.label, _v);
+  }
+  const stack = {};
+  for (let i = callouts.length - 1; i >= 0; i--) {
+    const co = callouts[i];
+    if (simT > co.until || !C[co.key]) { co.d.remove(); callouts.splice(i, 1); continue; }
+    const c = C[co.key]; _v.set(0, c.anchorY + c.labelY, 0); c.obj.localToWorld(_v);
+    const n = stack[co.key] = (stack[co.key] || 0) + 1;
+    place(co.d, _v, -34 - (n - 1) * 44);
+  }
+  for (const p of packets) if (p.chip) { _v.copy(p.g.position); _v.y += 2.6; p.chip.hidden = !showLabels || !place(p.chip, _v); }
+}
+
+// ---------- camera flights ----------
+let flight = null;
+function flyTo(key, dist) {
+  const a = typeof key === 'string' ? anchor(key) : key; if (!a) return;
+  const c = typeof key === 'string' ? C[key] : null;
+  dist = dist || (c && c.kind === 'node' ? 70 : c && c.kind === 'pod' ? 26 : 48);
+  const dir = camera.position.clone().sub(controls.target).normalize();
+  if (dir.y < .35) { dir.y = .35; dir.normalize(); }
+  flight = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: a.clone().add(dir.multiplyScalar(dist)), t1: a };
+  controls.autoRotate = false;
+}
+function flyHome() { flight = { t: 0, p0: camera.position.clone(), t0: controls.target.clone(), p1: HOME.pos.clone(), t1: HOME.target.clone() }; }
+function updateFlight(dt) {
+  if (!flight) return;
+  flight.t = Math.min(1, flight.t + dt / (REDUCED ? 1 : 1300)); const e = ease(flight.t);
+  camera.position.lerpVectors(flight.p0, flight.p1, e); controls.target.lerpVectors(flight.t0, flight.t1, e);
+  if (flight.t >= 1) flight = null;
+}
+let follow = false;
+function updateFollow() {
+  if (!follow || flight || !focusPacket) return;
+  const d = focusPacket.g.position.clone().sub(controls.target).multiplyScalar(.07);
+  controls.target.add(d); camera.position.add(d);
+}
+
+// ---------- git forge island ----------
+const gitI = island(new V(-158, 44, 40), 11, { grass: 0x9fd07a, trees: [[.6, .8], [3.4, .9]], rocks: 3, crystal: 0xf05133 });
+const gitG = new THREE.Group(); gitI.add(gitG);
+M(new THREE.BoxGeometry(7, 9, 1.4), 0xece2cc, gitG, 0, 4.5, -1.5);
+M(new THREE.BoxGeometry(7.6, .8, 2), 0x5a4a62, gitG, 0, 9.3, -1.5);
+const beads = [];
+function addCommit() {
+  const b = M(new THREE.SphereGeometry(.55, 12, 8), 0xf05133, gitG, -2.6 + (beads.length % 6) * 1.05, 2.2 + Math.floor(beads.length / 6) * 1.5, -.5, { mat: basic(0xff7a52) });
+  beads.push(b); b.scale.setScalar(.01); tween(500, t => b.scale.setScalar(Math.max(.01, backOut(t))));
+}
+function resetCommits() { beads.forEach(b => gitG.remove(b)); beads.length = 0; for (let i = 0; i < 5; i++) addCommit(); }
+reg('git', 'git.realm.io/shop/deploy', gitG, { kind: 'git', sub: 'main @ 1a7e94c', anchorY: 5, labelY: 6 });
+
+// ---------- cloud block storage island ----------
+const stI = island(new V(118, -16, 84), 11, { grass: 0x92c27a, trees: [[2.2, .8]], rocks: 3, crystal: 0xd9c08f });
+const stG = new THREE.Group(); stI.add(stG);
+const disks = [];
+function addDisk(color = 0x7d8fb3) {
+  const d = M(new THREE.CylinderGeometry(2.2, 2.2, 1, 20), color, stG, -4 + (disks.length % 4) * 2.7, .5 + Math.floor(disks.length / 4) * 1.1, 0);
+  disks.push(d); d.scale.setScalar(.01); tween(500, t => d.scale.setScalar(Math.max(.01, backOut(t)))); return d;
+}
+function resetDisks() { disks.forEach(d => stG.remove(d)); disks.length = 0; addDisk(); addDisk(); }
+reg('disks', 'Cloud block storage', stG, { kind: 'disks', sub: 'disks for data', anchorY: 3, labelY: 4 });
+scene.updateMatrixWorld(true);
+stream('you', 'git', PROTO.GIT.c, { a: .22 });
+
+// ---------- app catalogue additions ----------
+Object.assign(APP, {
+  argo:    { c: 0xff9a5a, img: 'quay.io/argoproj/argocd:v2.12.4', ns: 'argocd' },
+  flux:    { c: 0x6f8bff, img: 'ghcr.io/fluxcd/source-controller:v1.4.1', ns: 'flux-system' },
+  prom:    { c: 0xe8453c, img: 'quay.io/prometheus/prometheus:v2.54.1', ns: 'monitoring' },
+  kyverno: { c: 0xc58bff, img: 'ghcr.io/kyverno/kyverno:v1.12.5', ns: 'kyverno' },
+  csi:     { c: 0xd9c08f, img: 'registry.k8s.io/sig-storage/csi-provisioner:v5.0.1', ns: 'kube-system' },
+  db:      { c: 0xf2a65a, img: 'docker.io/library/postgres:16.4', ns: 'shop' },
+});
+const ABOUT = {
+  web: 'Storefront frontend. 3 replicas behind Service <code>web</code> (ClusterIP 10.96.120.15).',
+  orders: 'Orders API behind Service <code>orders</code> (ClusterIP 10.96.88.4).',
+  checkout: 'Checkout service created in quest I.',
+  coredns: 'Cluster DNS. Watches Services and EndpointSlices and answers <code>*.svc.cluster.local</code> on Service <code>kube-dns</code> (10.96.0.10).',
+  ingress: 'ingress-nginx controller. Watches Ingress objects, terminates TLS, routes by host and path straight to Pod endpoints.',
+  metrics: 'metrics-server. Scrapes kubelets\' resource metrics and serves them as <code>metrics.k8s.io</code> through the apiserver aggregation layer. Feeds HPA and <code>kubectl top</code>.',
+  argo: 'Argo CD component. <b>argocd-server</b> serves the UI/API and webhooks; <b>repo-server</b> clones Git and renders manifests (Helm, Kustomize); <b>application-controller</b> compares desired vs live state and syncs.',
+  flux: 'Flux controller. <b>source-controller</b> fetches Git/Helm/OCI sources into versioned artifacts; <b>kustomize-controller</b> builds and server-side-applies them, then health-checks.',
+  prom: 'Prometheus. Discovers targets through the Kubernetes API and pulls <code>/metrics</code> every 30 s into its time-series database.',
+  kyverno: 'Kyverno policy engine, registered as mutating and validating admission webhooks. The apiserver calls it before anything is persisted.',
+  csi: 'CSI controller plugin with its sidecars (external-provisioner, external-attacher). Turns PVCs and VolumeAttachments into cloud disk API calls.',
+  db: 'PostgreSQL StatefulSet Pod with a stable name and its own PersistentVolume.',
+};
+const INITIAL = [
+  ['ing', 'n1', 0, 'ingress-nginx-controller-7c9f8-qd2lk', 'ingress', '10.244.1.5'],
+  ['web1', 'n1', 1, 'web-6d8f9c7b5-abcde', 'web', '10.244.1.12'],
+  ['csi', 'n1', 4, 'csi-controller-6d9f8-x7p4q', 'csi', '10.244.1.41'],
+  ['kyverno', 'n1', 5, 'kyverno-admission-7f6d8-c2v9n', 'kyverno', '10.244.1.40'],
+  ['dns', 'n2', 0, 'coredns-5d78c9869d-r8z2x', 'coredns', '10.244.2.3'],
+  ['web2', 'n2', 1, 'web-6d8f9c7b5-fghij', 'web', '10.244.2.15'],
+  ['orders', 'n2', 2, 'orders-84bd6f5c4-wm4tn', 'orders', '10.244.2.21'],
+  ['metrics', 'n3', 0, 'metrics-server-6b9c7d-pp7d2', 'metrics', '10.244.3.4'],
+  ['web3', 'n3', 1, 'web-6d8f9c7b5-klmno', 'web', '10.244.3.9'],
+  ['argosrv', 'n4', 0, 'argocd-server-6c8d9f-7xk2m', 'argo', '10.244.4.10'],
+  ['argorepo', 'n4', 1, 'argocd-repo-server-58f4b-q9w3e', 'argo', '10.244.4.11'],
+  ['argoctl', 'n4', 2, 'argocd-application-controller-0', 'argo', '10.244.4.12'],
+  ['fluxsrc', 'n4', 3, 'source-controller-7d9c6-hh2pl', 'flux', '10.244.4.20'],
+  ['fluxkus', 'n4', 4, 'kustomize-controller-5b8f7-rr4tk', 'flux', '10.244.4.21'],
+  ['prom', 'n4', 5, 'prometheus-k8s-0', 'prom', '10.244.4.30'],
+];
+function resetWorld() {
+  clearCallouts();
+  for (const a of Object.keys(pods)) { const p = pods[a]; p.g.parent && p.g.parent.remove(p.g); unreg('pod:' + a); delete pods[a]; }
+  for (const r of INITIAL) spawnPod(...r);
+  NODES.forEach(N => setNodeUp(N.key, true));
+  C.git.label.querySelector('span').textContent = 'main @ 1a7e94c';
+  resetCommits(); resetDisks();
+}
+
+// ---------- flow helpers ----------
+let RV = 48210;
+const P = a => 'pod:' + a;
+const nsOf = a => APP[pods[a] ? pods[a].app : 'web'].ns || 'shop';
+const UA = { you: 'kubectl/v1.31.0 (linux/amd64)', kcm: 'kube-controller-manager/v1.31.0', sched: 'kube-scheduler/v1.31.0' };
+const agent = k => UA[k] || (k.endsWith('.kubelet') ? `kubelet/v1.31.0 (${NODE[k.slice(0, 2)].name})` : k.startsWith('pod:') && pods[k.slice(4)] ? pods[k.slice(4)].name.replace(/-[a-z0-9]{4,10}-[a-z0-9]{5}$|-\d$/, '') : k);
+const rest = (from, m, path, body) => `${m} ${path} HTTP/2\nHost: 192.168.1.10:6443\nUser-Agent: ${agent(from)}\nAuthorization: ${from === 'you' ? 'client cert CN=you, O=shop-devs' : 'Bearer eyJhbGciOiJSUzI1NiIs… (ServiceAccount token)'}\nContent-Type: application/json\n\n${body || ''}`;
+const ev = (type, kind, name, extra = '') => `{\n  "type": "${type}",\n  "object": {\n    "kind": "${kind}",\n    "metadata": {"name": "${name}", "resourceVersion": "${RV}"}${extra ? ',\n    ' + extra : ''}\n  }\n}`;
+function mkKit(run) {
+  const dead = () => run.dead;
+  return {
+    dead,
+    send: (from, to, proto, label, payload, o = {}) => dead() ? Promise.resolve() : launch(Object.assign({ from, legs: [{ to, proto, label, payload }] }, o)),
+    path: (from, legs, o = {}) => dead() ? Promise.resolve() : launch(Object.assign({ from, legs }, o)),
+    wait: ms => dead() ? Promise.resolve() : wait(ms),
+    say: (key, html, ms, cls) => { if (!dead()) say(key, html, ms, cls); },
+    do: fn => { if (!dead()) fn(); },
+  };
+}
+async function etcdWrite(k, key, full) {
+  const rv = ++RV, idx = rv + 90000;
+  await k.send('api', 'etcd0', 'GRPC', 'Txn Put ' + key.split('/').slice(2, 3).join(''), `etcdserverpb.KV/Txn\ncompare: [ mod_revision("${key}") ]\nsuccess: [ RequestPut {\n  key:   "${key}"\n  value: <k8s\\x00 protobuf, ~1.4 KB>\n} ]`);
+  const app = i => k.send('etcd0', 'etcd' + i, 'RAFT', 'AppendEntries', `raftpb.Message\ntype:    MsgApp\nterm:    7\nfrom:    etcd-0 (leader)\nto:      etcd-${i}\nindex:   ${idx}\nlogTerm: 7\ncommit:  ${idx - 1}\nentries: [ Put ${key} ]`);
+  await Promise.all([app(1), app(2)]);
+  const acks = Promise.all([1, 2].map(i => k.send('etcd' + i, 'etcd0', 'RAFT', 'MsgAppResp', `raftpb.Message\ntype:  MsgAppResp\nterm:  7\nfrom:  etcd-${i}\nto:    etcd-0\nindex: ${idx}   (entry fsync'd to WAL)`)));
+  if (!full) return;
+  await acks;
+  k.say('etcd0', `quorum 2/3 → committed index <code>${idx}</code> · revision ${rv}`, 2800, 'ok');
+  await k.send('etcd0', 'api', 'GRPC', 'TxnResponse rev=' + rv, `TxnResponse {\n  succeeded: true\n  header { revision: ${rv}  raft_term: 7 }\n}`);
+}
+function regKey(path) {
+  const m = path.split('?')[0].match(/namespaces\/([^/]+)\/([^/]+)(?:\/([^/]+))?/);
+  if (m) return `/registry/${m[2]}/${m[1]}/${m[3] || '…'}`;
+  const seg = path.split('?')[0].split('/').filter(Boolean);
+  return '/registry/' + seg.slice(-2).join('/');
+}
+async function apiCall(k, from, m, path, label, body, o = {}) {
+  await k.send(from, 'api', 'REST', label, rest(from, m, path, body));
+  k.do(() => [0, 1, 2].forEach(flashGate));
+  if (o.etcd !== false) await etcdWrite(k, o.key || regKey(path), o.full);
+  if (o.reply) { const code = o.reply === true ? (m === 'POST' ? '201 Created' : '200 OK') : o.reply; await k.send('api', from, 'REST', code, `HTTP/2 ${code}\nContent-Type: application/json\n\n{"metadata": {"resourceVersion": "${RV}"}, …}`); }
+}
+const watch = (k, to, type, kind, name, extra) => k.send('api', to, 'WATCH', `${type} ${kind}`, ev(type, kind, name, extra));
+function flashRules(n) { NODE[n].rulesFlash = 1; }
+async function proxiesUpdate(k, svc, n) {
+  await Promise.all(NODES.filter(N => N.up).map(N => watch(k, N.key + '.proxy', 'MODIFIED', 'EndpointSlice', svc + '-x7k2p', `"endpoints": "${n} ready"`).then(() => {
+    k.do(() => flashRules(N.key)); k.say(N.key + '.proxy', `iptables <code>KUBE-SVC-${svc.toUpperCase()}</code> → ${n} endpoints`, 2400, 'ok');
+  })));
+}
+async function endpoints(k, svc, n) {
+  k.do(() => spin('endpointslice'));
+  k.say('kcm', `EndpointSlice controller: <code>${svc}</code> now has ${n} ready endpoints`, 2600);
+  await apiCall(k, 'kcm', 'PUT', `/apis/discovery.k8s.io/v1/namespaces/shop/endpointslices/${svc}-x7k2p`, 'PUT endpointslice', `{"kind":"EndpointSlice","addressType":"IPv4","endpoints":[ …${n} ready… ],"ports":[{"port":8080}]}`, { key: `/registry/endpointslices/shop/${svc}-x7k2p` });
+  await proxiesUpdate(k, svc, n);
+}
+async function scheduleOne(k, podName, rows, choice) {
+  for (const [n, ok, txt] of rows) {
+    k.do(() => aimScope(n)); k.say(n, `${ok ? '✓' : '✗'} ${txt}`, 3800, ok ? 'score' : 'bad'); await k.wait(520);
+  }
+  k.do(() => aimScope(choice));
+  k.say('sched', `<code>${podName}</code> → <b>${NODE[choice].name}</b>`, 3000, 'ok');
+  await k.wait(500);
+}
+const LAYERS = ['a3ed95cae', '7d1f4c0e2', 'e5b8a90f1'];
+async function podStart(k, a, node, slot, name, app, ip, o = {}) {
+  const kb = node + '.kubelet', cd = node + '.containerd', ns = APP[app].ns || 'shop', img = o.img || APP[app].img;
+  if (o.watch !== false) await watch(k, kb, 'ADDED', 'Pod', name, `"spec": {"nodeName": "${NODE[node].name}"}`);
+  await k.send(kb, cd, 'CRI', 'RunPodSandbox', `runtime.v1.RuntimeService/RunPodSandbox\nconfig {\n  metadata { name: "${name}"  namespace: "${ns}"  attempt: 0 }\n  hostname: "${name}"\n  log_directory: "/var/log/pods/${ns}_${name}_…"\n  linux { security_context { namespace_options { network: POD  pid: CONTAINER } } }\n}\n→ start pause:3.10 holding new netns\n→ CNI ADD (flannel → bridge cni0, IPAM host-local)`);
+  k.do(() => spawnPod(a, node, slot, name, app, ip, 'sandbox'));
+  k.say(cd, `CNI ADD → veth into <code>cni0</code> · IP <code>${ip}</code>`, 2800, 'ok');
+  await k.wait(450);
+  if (o.pull) {
+    await k.send(kb, cd, 'CRI', 'PullImage', `runtime.v1.ImageService/PullImage\nimage { image: "${img}" }`);
+    await k.send(cd, 'registry', 'OCI', 'GET manifest', `GET /v2/${img.split('/').slice(1).join('/').replace(':', '/manifests/')} HTTP/1.1\nHost: ${img.split('/')[0]}\nAccept: application/vnd.oci.image.index.v1+json,\n        application/vnd.oci.image.manifest.v1+json`);
+    await k.send('registry', cd, 'OCI', 'manifest (3 layers)', `HTTP/1.1 200 OK\nContent-Type: application/vnd.oci.image.manifest.v1+json\nDocker-Content-Digest: sha256:4c1f…\n\n{"layers": [\n  {"digest": "sha256:${LAYERS[0]}…", "size": 29124380},\n  {"digest": "sha256:${LAYERS[1]}…", "size": 1830212},\n  {"digest": "sha256:${LAYERS[2]}…", "size": 412877}\n]}`);
+    await Promise.all(LAYERS.map((l, i) => k.wait(i * 220).then(() => k.send('registry', cd, 'OCI', `blob ${l.slice(0, 7)}`, `HTTP/1.1 200 OK\nContent-Type: application/vnd.oci.image.layer.v1.tar+gzip\nDocker-Content-Digest: sha256:${l}…\n\n<gzip tar stream, verified against digest, unpacked to overlayfs snapshot>`))));
+    k.say(cd, 'all layers verified (sha256) and unpacked', 2400, 'ok');
+  } else k.say(cd, `<code>${img.split('/').pop()}</code> already on disk · no pull`, 2400, 'ok');
+  if (o.volume) { await o.volume(); }
+  await k.send(kb, cd, 'CRI', 'Create+StartContainer', `runtime.v1.RuntimeService/CreateContainer\npod_sandbox_id: "4f1c9e…"\nconfig {\n  image { image: "${img}" }\n  envs [ KUBERNETES_SERVICE_HOST=10.96.0.1 … ]\n  mounts [ /var/run/secrets/kubernetes.io/serviceaccount (projected token)${o.mount ? ',\n           ' + o.mount : ''} ]\n}\nruntime.v1.RuntimeService/StartContainer\n→ containerd-shim-runc-v2 → runc create/start (pid ${40000 + Math.floor(Math.random() * 9000)})`);
+  k.do(() => setPhase(a, 'running'));
+  if (o.status !== false) await apiCall(k, kb, 'PATCH', `/api/v1/namespaces/${ns}/pods/${name}/status`, 'PATCH pod/status', `{"status": {"phase": "Running", "podIP": "${ip}",\n  "conditions": [{"type": "Ready", "status": "True"}]}}`, { key: `/registry/pods/${ns}/${name}` });
+}
+function podRoute(fromA, toA, proto, label, payload) {
+  const a = pods[fromA], b = pods[toA]; if (!a || !b) return [];
+  if (a.node === b.node) return [{ to: P(toA), proto, label, payload }];
+  return [
+    { to: a.node + '.vtep', proto, label, payload },
+    { to: b.node + '.vtep', proto: 'VXLAN', label: `VXLAN ${NODE[a.node].ip}→${NODE[b.node].ip}`, payload: `Outer IPv4  ${NODE[a.node].ip} → ${NODE[b.node].ip}\nOuter UDP   :${40000 + Math.floor(Math.random() * 9999)} → :8472\nVXLAN       VNI 1\nInner Eth   dst MAC = flannel.1 of ${NODE[b.node].name}\nInner IPv4  ${a.ip} → ${b.ip}\n── inner payload ──\n${payload}` },
+    { to: P(toA), proto, label, payload },
+  ];
+}
+
+// ---------- quests ----------
+const QUESTS = [
+{ t: 'Meet the Realm', s: 'Start here: a short tour of who does what, in plain words', tour: true, steps: [
+  { who: 'Skyrealm', cam: 'home', text: 'Kubernetes runs your apps on a group of machines and keeps them the way you asked. You describe what you want, for example <b>3 copies of my web app</b>, and Kubernetes makes it so, and keeps it so. Each stop on this tour shows one piece.', run: k => k.wait(600) },
+  { who: 'You', cam: 'you', dist: 40, text: 'This is you. You change the cluster with <code>kubectl</code> commands (or by editing Git, more on that later), and you use your app with a browser.', run: k => k.wait(400) },
+  { who: 'kube-apiserver', cam: 'api', dist: 60, text: '<b>The front desk.</b> Every change and every question goes through here, from you and from every other part of the cluster. It checks who you are and whether you\'re allowed, then writes the request down.',
+    run: async k => { await k.send('you', 'api', 'REST', 'a request', rest('you', 'GET', '/api/v1/namespaces/shop/pods')); k.do(() => [0, 1, 2].forEach(flashGate)); k.say('api', 'checked: who you are ✓ allowed ✓', 2600, 'ok'); } },
+  { who: 'etcd', cam: 'etcd0', dist: 40, text: '<b>The cluster\'s memory.</b> A small database kept as three copies that must agree. Everything Kubernetes knows lives here, and only the front desk may write to it.',
+    run: k => etcdWrite(k, '/registry/pods/shop/example', true) },
+  { who: 'kube-controller-manager', cam: 'kcm', dist: 45, text: '<b>The fixers.</b> Each gear is a loop that compares what you asked for with what actually exists, and fixes any difference. Ask for 3 copies, one crashes, and a fixer makes a new one.',
+    run: async k => { k.do(() => { spin('deployment'); spin('replicaset'); }); k.say('kcm', 'wanted 3 · have 2 → make 1 more', 2800); await k.wait(1400); } },
+  { who: 'kube-scheduler', cam: 'sched', dist: 45, text: '<b>The seating host.</b> When a new Pod needs a home, the scheduler picks the best machine for it. It only decides. It doesn\'t start anything.',
+    run: async k => { for (const n of ['n1', 'n2', 'n3']) { k.do(() => aimScope(n)); await k.wait(500); } k.say('sched', 'best fit → node-3', 2400, 'ok'); await k.wait(800); } },
+  { who: 'node-2', cam: 'n2', dist: 75, text: '<b>A worker machine.</b> Your apps run on islands like this. Each small hexagon is a <b>Pod</b>: one running copy of an app, with its own IP address.', run: k => k.wait(600) },
+  { who: 'kubelet', cam: 'n2.kubelet', dist: 32, text: '<b>The machine\'s caretaker.</b> It asks the front desk what should run on its machine, then has containerd (the forge on its left) download the app and start it. It checks in every 10 seconds so the cluster knows the machine is alive.',
+    run: k => k.send('n2.kubelet', 'api', 'REST', 'I\'m alive (heartbeat)', rest('n2.kubelet', 'PUT', '/apis/coordination.k8s.io/v1/namespaces/kube-node-lease/leases/node-2')) },
+  { who: 'kube-proxy', cam: 'n2.proxy', dist: 32, text: '<b>The traffic rules.</b> Pods come and go, so apps call each other by a stable <b>Service</b> name instead. kube-proxy writes the rules (this red gate) that send each call to a healthy Pod.',
+    run: async k => { k.do(() => flashRules('n2')); k.say('n2.proxy', '"orders" → one of its healthy Pods', 2600, 'ok'); await k.wait(1200); } },
+  { who: 'flannel tunnel', cam: 'n2.vtep', dist: 60, text: '<b>The tunnels.</b> When a Pod on one machine talks to a Pod on another, the message is wrapped and sent through these portals. The purple threads between islands are those tunnels.',
+    run: k => k.path(P('web2'), podRoute('web2', 'web1', 'HTTP', 'a message', 'GET / HTTP/1.1')) },
+  { who: 'node-4', cam: 'n4', dist: 75, text: '<b>The platform machine.</b> Argo CD and Flux watch a Git repository and make the cluster match it, so you change Git instead of running commands (that\'s <b>GitOps</b>). Prometheus collects health numbers.', run: k => k.wait(600) },
+  { who: 'Skyrealm', cam: 'home', text: 'That\'s the whole cast. Every glowing dot is one message between them, and you can click any dot or building to read it. Pick a quest on the left to follow one story from start to finish. <b>Birth of a Deployment</b> is the best next step.', run: k => k.wait(300) },
+]},
+{ t: 'Birth of a Deployment', s: 'kubectl apply → etcd → controllers → scheduler → kubelet → running Pods', steps: [
+  { who: 'You', cam: 'you', text: 'You run <code>kubectl apply -f checkout.yaml</code>. kubectl reads your kubeconfig, converts the YAML to JSON and sends it over HTTPS to the API server. Nothing else in the cluster is ever contacted directly.',
+    run: k => k.send('you', 'api', 'REST', 'POST deployments', rest('you', 'POST', '/apis/apps/v1/namespaces/shop/deployments?fieldManager=kubectl-client-side-apply',
+`{
+  "apiVersion": "apps/v1", "kind": "Deployment",
+  "metadata": {"name": "checkout", "namespace": "shop"},
+  "spec": {
+    "replicas": 2,
+    "selector": {"matchLabels": {"app": "checkout"}},
+    "template": {
+      "metadata": {"labels": {"app": "checkout"}},
+      "spec": {"containers": [{
+        "name": "checkout",
+        "image": "registry.realm.io/shop/checkout:1.4.2",
+        "ports": [{"containerPort": 8080}],
+        "resources": {"requests": {"cpu": "250m", "memory": "256Mi"}},
+        "readinessProbe": {"httpGet": {"path": "/ready", "port": 8080}}
+      }]}
+    }
+  }
+}`)) },
+  { who: 'kube-apiserver', cam: 'api', text: 'Three gates before anything is stored. <b>Authentication</b>: who is this? (your client certificate). <b>Authorization</b>: may they do this? (RBAC). <b>Admission</b>: mutating plugins and webhooks fill in defaults, the schema is validated, then validating admission runs.',
+    run: async k => {
+      const L = ['Authentication: x509 cert <code>CN=you, O=shop-devs</code>', 'Authorization: RBAC RoleBinding <code>shop-devs</code> allows <code>create deployments</code>', 'Admission: defaults set (strategy RollingUpdate 25%/25%) · schema valid'];
+      for (let i = 0; i < 3; i++) { k.do(() => flashGate(i)); k.say('api', L[i], 3400, 'ok'); await k.wait(800); }
+    } },
+  { who: 'etcd', cam: 'etcd0', text: 'Only the API server talks to etcd. It writes <code>/registry/deployments/shop/checkout</code> to the Raft <b>leader</b>, which appends it to its log and replicates it to both followers. Once a majority (2 of 3) has it on disk, the entry commits and the API server answers <code>201 Created</code>.',
+    run: async k => { await etcdWrite(k, '/registry/deployments/shop/checkout', true); await k.send('api', 'you', 'REST', '201 Created', `HTTP/2 201 Created\n\n{"kind":"Deployment","metadata":{"name":"checkout","uid":"7b1e0c2a-…","resourceVersion":"${RV}","generation":1}, …}`); } },
+  { who: 'kube-controller-manager', cam: 'kcm', text: 'Nothing is running yet. A Deployment is only a record of intent. The Deployment controller keeps a watch open on the API server, which now pushes it an <code>ADDED</code> event.',
+    run: async k => { await watch(k, 'kcm', 'ADDED', 'Deployment', 'checkout', '"spec": {"replicas": 2}'); k.do(() => spin('deployment')); k.say('kcm', 'Deployment controller: no ReplicaSet for template hash <code>5f7c9d8b6</code> → create one', 3200); await k.wait(700); } },
+  { who: 'kube-controller-manager', text: 'It creates a ReplicaSet. The ReplicaSet controller receives that over its own watch, compares 2 desired Pods with 0 existing, and creates two Pod objects. They are stored with no node assigned (<code>spec.nodeName</code> empty, phase Pending).',
+    run: async k => {
+      await apiCall(k, 'kcm', 'POST', '/apis/apps/v1/namespaces/shop/replicasets', 'POST replicaset', '{"metadata":{"name":"checkout-5f7c9d8b6","ownerReferences":[{"kind":"Deployment","name":"checkout"}]},"spec":{"replicas":2, …}}');
+      await watch(k, 'kcm', 'ADDED', 'ReplicaSet', 'checkout-5f7c9d8b6');
+      k.do(() => spin('replicaset')); k.say('kcm', 'ReplicaSet controller: want 2, have 0 → create 2 Pods', 3000);
+      await Promise.all(['x8k2p', 'm4q7z'].map(s => apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/pods', 'POST pod', `{"metadata":{"generateName":"checkout-5f7c9d8b6-","name":"checkout-5f7c9d8b6-${s}"},"spec":{"nodeName":"", …}}`)));
+      k.say('api', '2 Pods stored · phase <code>Pending</code> · no node yet', 2600);
+    } },
+  { who: 'kube-scheduler', cam: 'sched', dist: 70, text: 'The scheduler watches for Pods without a node. For each one it <b>filters</b> out nodes that can\'t run it (resources, taints, affinity), then <b>scores</b> the rest (least allocated, image locality, topology spread) and picks the highest.',
+    run: async k => {
+      await Promise.all(['x8k2p', 'm4q7z'].map(s => watch(k, 'sched', 'ADDED', 'Pod', 'checkout-5f7c9d8b6-' + s, '"spec": {"nodeName": ""}')));
+      await scheduleOne(k, 'checkout-…-x8k2p', [['n1', true, 'fits · score 61 (ingress busy)'], ['n2', true, 'fits · score 79'], ['n3', true, 'fits · score 88 (most free CPU)'], ['n4', false, 'taint <code>pool=platform:NoSchedule</code>']], 'n3');
+      k.say('sched', 'next Pod: x8k2p is now assumed on node-3, so spread favours node-2', 3000);
+      await k.wait(700);
+      await scheduleOne(k, 'checkout-…-m4q7z', [['n2', true, 'score 84'], ['n3', true, 'score 70 (spread penalty)']], 'n2');
+    } },
+  { who: 'kube-scheduler', text: 'The decision goes back to the API server as a <code>Binding</code> subresource, which sets <code>spec.nodeName</code>. That is all the scheduler does. It never contacts a node.',
+    run: k => Promise.all([['x8k2p', 'node-3'], ['m4q7z', 'node-2']].map(([s, n]) => apiCall(k, 'sched', 'POST', `/api/v1/namespaces/shop/pods/checkout-5f7c9d8b6-${s}/binding`, 'POST pod/binding', `{"kind":"Binding","metadata":{"name":"checkout-5f7c9d8b6-${s}"},"target":{"kind":"Node","name":"${n}"}}`, { key: '/registry/pods/shop/checkout-5f7c9d8b6-' + s }))) },
+  { who: 'kubelet', cam: 'n3', text: 'Each kubelet watches only Pods bound to its own node (<code>fieldSelector=spec.nodeName=node-3</code>). It asks containerd over CRI for a <b>pod sandbox</b>: the tiny pause container that owns the network namespace. The CNI plugin then gives the Pod its IP from the node\'s /24.',
+    run: k => Promise.all([
+      podStepSandbox(k, 'co1', 'n3', 2, 'checkout-5f7c9d8b6-x8k2p', '10.244.3.17'),
+      podStepSandbox(k, 'co2', 'n2', 3, 'checkout-5f7c9d8b6-m4q7z', '10.244.2.24')]) },
+  { who: 'containerd', cam: 'registry', dist: 80, text: 'Neither node has <code>checkout:1.4.2</code> cached, so containerd pulls it from the registry: first the manifest, then each layer blob by digest. Every blob is checked against its sha256 before it is unpacked.',
+    run: k => Promise.all(['n3', 'n2'].map(n => pullOnly(k, n, APP.checkout.img))) },
+  { who: 'kubelet', cam: 'n3', text: '<code>CreateContainer</code> and <code>StartContainer</code>: containerd\'s shim runs runc, which starts the process inside the sandbox\'s namespaces and cgroups. Then the kubelet runs the readiness probe and reports status back.',
+    run: k => Promise.all([['co1', 'n3', 'checkout-5f7c9d8b6-x8k2p', '10.244.3.17'], ['co2', 'n2', 'checkout-5f7c9d8b6-m4q7z', '10.244.2.24']].map(async ([a, n, name, ip]) => {
+      await k.send(n + '.kubelet', n + '.containerd', 'CRI', 'Create+StartContainer', `runtime.v1.RuntimeService/CreateContainer\nconfig { image { image: "${APP.checkout.img}" } }\nruntime.v1.RuntimeService/StartContainer\n→ runc start`);
+      k.do(() => setPhase(a, 'running'));
+      await k.send(n + '.kubelet', P(a), 'PROBE', 'GET /ready', `GET http://${ip}:8080/ready\nUser-Agent: kube-probe/1.31\n(readinessProbe · periodSeconds 10)`);
+      await k.send(P(a), n + '.kubelet', 'PROBE', '200 OK', 'HTTP/1.1 200 OK\n\nready');
+      await apiCall(k, n + '.kubelet', 'PATCH', `/api/v1/namespaces/shop/pods/${name}/status`, 'PATCH pod/status', `{"status":{"phase":"Running","podIP":"${ip}","conditions":[{"type":"Ready","status":"True"}]}}`, { key: '/registry/pods/shop/' + name });
+    })) },
+  { who: 'kube-proxy', cam: 'n2', dist: 90, text: 'The EndpointSlice controller adds the two ready Pod IPs to the <code>checkout</code> Service\'s EndpointSlice. Every kube-proxy watches EndpointSlices and rewrites its node\'s iptables rules, so connections to the Service\'s ClusterIP now reach the new Pods. The Deployment is done.',
+    run: async k => { await watch(k, 'kcm', 'MODIFIED', 'Pod', 'checkout-5f7c9d8b6-x8k2p', '"status": {"conditions": [{"type": "Ready", "status": "True"}]}'); await endpoints(k, 'checkout', 2); } },
+]},
+{ t: 'A Traveler\'s Request', s: 'Browser → load balancer → NodePort → ingress-nginx → VXLAN overlay → Pod, and back', steps: [
+  { who: 'You', cam: 'you', text: 'You open <code>https://shop.realm.io</code>. DNS points at the cloud load balancer that Kubernetes created for the ingress controller\'s <code>type: LoadBalancer</code> Service.',
+    run: k => k.send('you', 'lb', 'HTTP', 'GET / (TLS)', 'TCP SYN 81.2.69.160:51544 → 34.120.8.9:443\nTLS 1.3 ClientHello  SNI=shop.realm.io\n\nGET / HTTP/2\nHost: shop.realm.io\nAccept: text/html') },
+  { who: 'Cloud Load Balancer', cam: 'n1', dist: 80, text: 'The load balancer forwards to a healthy node\'s <b>NodePort</b> (30443). It has no idea Pods exist. On node-1, iptables rules written by kube-proxy DNAT the packet to the ingress-nginx Pod.',
+    run: async k => {
+      await k.path('lb', [{ to: 'n1.proxy', proto: 'HTTP', label: '→ 192.168.1.11:30443', payload: 'IPv4 34.120.8.9 → 192.168.1.11\nTCP  → :30443 (NodePort of svc ingress-nginx-controller)' }]);
+      k.do(() => flashRules('n1')); k.say('n1.proxy', '<code>KUBE-NODEPORTS</code> :30443 → DNAT 10.244.1.5:443', 3000, 'ok');
+      await k.send('n1.proxy', P('ing'), 'HTTP', '→ 10.244.1.5:443', 'IPv4 192.168.1.11 → 10.244.1.5 (after DNAT + SNAT)\nTCP  → :443\n(conntrack remembers the rewrite for the reply)');
+    } },
+  { who: 'ingress-nginx', cam: P('ing'), text: 'The ingress controller terminates TLS, matches the Ingress rule (host <code>shop.realm.io</code>, path <code>/</code> → Service <code>web:80</code>) and picks a backend. ingress-nginx skips the ClusterIP and load-balances straight to Pod IPs from the EndpointSlice.',
+    run: async k => { k.say(P('ing'), 'TLS terminated · rule <code>shop.realm.io/</code> → <code>web:80</code>', 3000, 'ok'); await k.wait(900); k.say(P('ing'), 'upstream: <code>10.244.3.9:8080</code> (web-…-klmno, round-robin)', 3000); await k.wait(900); } },
+  { who: 'flannel.1', cam: 'n1.vtep', dist: 110, text: 'The target Pod lives on node-3. The node routing table sends <code>10.244.3.0/24</code> via <code>flannel.1</code>, which wraps the whole Pod packet inside a UDP datagram addressed node-to-node. Click the purple packet to see the outer and inner headers.',
+    run: k => k.path(P('ing'), podRoute('ing', 'web3', 'HTTP', 'GET / → 10.244.3.9', 'GET / HTTP/1.1\nHost: shop.realm.io\nX-Forwarded-For: 81.2.69.160\nX-Request-ID: 5c2f0d9e…')) },
+  { who: 'web Pod', cam: P('web3'), text: 'node-3 unwraps the VXLAN packet, the cni0 bridge delivers it to the Pod\'s veth, and the web container answers.',
+    run: async k => { k.say(P('web3'), '200 OK · 18.4 KB html · 11 ms', 2800, 'ok'); await k.wait(900); } },
+  { who: 'Skyrealm', cam: 'n2', dist: 160, text: 'The reply retraces the path: VXLAN back to node-1, into ingress-nginx, then conntrack reverses the NAT and the load balancer returns it to you. You never knew which Pod answered.',
+    run: async k => {
+      const out = podRoute('web3', 'ing', 'HTTP', '200 OK', 'HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 18842');
+      await k.path(P('web3'), out);
+      await k.path(P('ing'), [{ to: 'n1.proxy', proto: 'HTTP', label: 'un-NAT (conntrack)', payload: 'conntrack entry reversed: src 10.244.1.5:443 → 192.168.1.11:30443' }, { to: 'lb', proto: 'HTTP', label: '200 OK', payload: 'HTTP/2 200\ncontent-type: text/html' }, { to: 'you', proto: 'HTTP', label: '200 OK · page', payload: 'HTTP/2 200\ncontent-type: text/html; charset=utf-8\nserver: nginx\n\n<!doctype html>…' }]);
+    } },
+]},
+{ t: 'Asking the Oracle', s: 'Pod DNS lookup via CoreDNS, then a ClusterIP that no process listens on', steps: [
+  { who: 'web Pod', cam: P('web1'), text: 'The web Pod on node-1 wants to call <code>orders</code>. Its <code>/etc/resolv.conf</code> (written by the kubelet) says <code>nameserver 10.96.0.10</code>, <code>search shop.svc.cluster.local svc.cluster.local cluster.local</code>, <code>ndots:5</code>.',
+    run: async k => { k.say(P('web1'), 'A? <code>orders.shop.svc.cluster.local</code>', 3000); await k.wait(900); } },
+  { who: 'kube-proxy', cam: 'n1', dist: 70, text: '<code>10.96.0.10</code> is the kube-dns Service, a virtual IP. Before the packet leaves node-1, iptables picks a CoreDNS endpoint and DNATs to it. kube-proxy wrote that rule earlier. It is not in the path itself.',
+    run: async k => {
+      await k.send(P('web1'), 'n1.proxy', 'DNS', 'A? orders → 10.96.0.10', 'UDP 10.244.1.12:41022 → 10.96.0.10:53\n;; QUESTION\norders.shop.svc.cluster.local. IN A');
+      k.do(() => flashRules('n1')); k.say('n1.proxy', '<code>KUBE-SVC-TCOU7JCQXEZGVUNU</code> → DNAT 10.244.2.3:53', 3000, 'ok');
+    } },
+  { who: 'CoreDNS', cam: P('dns'), dist: 50, text: 'The query crosses the overlay to node-2. CoreDNS\'s <code>kubernetes</code> plugin keeps a watch on Services, so it answers from memory.',
+    run: async k => {
+      await k.path('n1.proxy', [{ to: 'n1.vtep', proto: 'DNS', label: '→ 10.244.2.3:53', payload: 'UDP 10.244.1.12 → 10.244.2.3:53' }, { to: 'n2.vtep', proto: 'VXLAN', label: 'VXLAN 192.168.1.11→.12', payload: 'Outer UDP :8472 VNI 1\nInner UDP 10.244.1.12 → 10.244.2.3:53 (DNS query)' }, { to: P('dns'), proto: 'DNS', label: 'A? orders', payload: 'orders.shop.svc.cluster.local. IN A' }]);
+      k.say(P('dns'), '<code>orders.shop.svc.cluster.local. 5 IN A 10.96.88.4</code>', 3200, 'ok'); await k.wait(700);
+      await k.path(P('dns'), [{ to: 'n2.vtep', proto: 'DNS', label: 'A 10.96.88.4', payload: ';; ANSWER\norders.shop.svc.cluster.local. 5 IN A 10.96.88.4' }, { to: 'n1.vtep', proto: 'VXLAN', label: 'VXLAN 192.168.1.12→.11', payload: 'Outer UDP :8472 VNI 1\nInner UDP 10.244.2.3:53 → 10.244.1.12' }, { to: 'n1.proxy', proto: 'DNS', label: 'un-DNAT src → 10.96.0.10', payload: 'conntrack: reply source rewritten 10.244.2.3 → 10.96.0.10' }, { to: P('web1'), proto: 'DNS', label: 'A 10.96.88.4', payload: ';; ANSWER\norders.shop.svc.cluster.local. 5 IN A 10.96.88.4' }]);
+    } },
+  { who: 'web Pod', cam: 'n1', dist: 80, text: 'Now the Pod opens TCP to <code>10.96.88.4:80</code>. No machine owns that address. iptables on node-1 matches <code>KUBE-SVC-ORDERS</code>, picks an endpoint (random, weighted by count) and DNATs to <code>10.244.2.21:8080</code>.',
+    run: async k => {
+      await k.send(P('web1'), 'n1.proxy', 'HTTP', 'SYN → 10.96.88.4:80', 'TCP SYN 10.244.1.12:50122 → 10.96.88.4:80');
+      k.do(() => flashRules('n1')); k.say('n1.proxy', '<code>KUBE-SVC-ORDERS</code> 1 endpoint → DNAT 10.244.2.21:8080', 3000, 'ok');
+      await k.path('n1.proxy', [{ to: 'n1.vtep', proto: 'HTTP', label: 'GET /orders', payload: 'GET /orders?user=42 HTTP/1.1\nHost: orders' }, { to: 'n2.vtep', proto: 'VXLAN', label: 'VXLAN 192.168.1.11→.12', payload: 'Outer UDP :8472 VNI 1\nInner TCP 10.244.1.12 → 10.244.2.21:8080' }, { to: P('orders'), proto: 'HTTP', label: 'GET /orders', payload: 'GET /orders?user=42 HTTP/1.1' }]);
+      k.say(P('orders'), '200 · <code>{"orders": 3}</code>', 2600, 'ok'); await k.wait(500);
+      await k.path(P('orders'), [{ to: 'n2.vtep', proto: 'HTTP', label: '200', payload: 'HTTP/1.1 200 OK\n{"orders":3}' }, { to: 'n1.vtep', proto: 'VXLAN', label: 'VXLAN back', payload: 'Outer UDP :8472\nInner 10.244.2.21 → 10.244.1.12' }, { to: P('web1'), proto: 'HTTP', label: '200 {"orders":3}', payload: 'HTTP/1.1 200 OK\nContent-Type: application/json\n\n{"orders":3}' }]);
+    } },
+]},
+{ t: 'Heartbeat of the Realm', s: 'Node Leases, a node going dark, eviction and rescheduling', steps: [
+  { who: 'kubelet', cam: 'api', dist: 150, text: 'Every 10 seconds each kubelet renews its <code>Lease</code> in <code>kube-node-lease</code>. That small write is the node\'s heartbeat. Full node status is only sent when something changes, or every 5 minutes.',
+    run: k => Promise.all(NODES.map(N => apiCall(k, N.key + '.kubelet', 'PUT', `/apis/coordination.k8s.io/v1/namespaces/kube-node-lease/leases/${N.name}`, 'PUT lease', `{"kind":"Lease","metadata":{"name":"${N.name}"},"spec":{"holderIdentity":"${N.name}","leaseDurationSeconds":40,"renewTime":"${new Date().toISOString()}"}}`, { key: '/registry/leases/kube-node-lease/' + N.name }))) },
+  { who: 'node-3', cam: 'n3', dist: 80, text: 'node-3 loses power. Its kubelet stops renewing the Lease. Its Pods may still be running, but nothing can confirm that.',
+    run: async k => { k.do(() => setNodeUp('n3', false)); k.say('n3', 'power loss · kubelet silent', 3000, 'bad'); await k.wait(1200); } },
+  { who: 'kube-controller-manager', cam: 'kcm', text: 'The node-lifecycle controller watches Leases. After <code>node-monitor-grace-period</code> (40 s) without a renewal, it marks the node <code>Ready=Unknown</code> and adds the taint <code>node.kubernetes.io/unreachable:NoExecute</code>.',
+    run: async k => {
+      k.do(() => spin('nodelifecycle'));
+      for (const s of [10, 20, 30, 40]) { k.say('kcm', `node-3 lease age <code>${s}s</code>${s === 40 ? ' → grace period exceeded' : ''}`, 900, s === 40 ? 'bad' : ''); await k.wait(650); }
+      await apiCall(k, 'kcm', 'PATCH', '/api/v1/nodes/node-3/status', 'PATCH node Ready=Unknown', '{"status":{"conditions":[{"type":"Ready","status":"Unknown","reason":"NodeStatusUnknown"}]},\n "spec":{"taints":[{"key":"node.kubernetes.io/unreachable","effect":"NoExecute"}]}}', { key: '/registry/minions/node-3' });
+    } },
+  { who: 'kube-controller-manager', text: 'Each Pod carries a default toleration of 300 s for that taint. When it expires, the taint manager evicts the Pods: they are deleted from the API, and the EndpointSlice controller removes them from Services right away.',
+    run: async k => {
+      for (const s of [60, 180, 300]) { k.say('kcm', `toleration timer <code>${s}s / 300s</code>`, 800); await k.wait(600); }
+      await Promise.all(['web3', 'metrics'].map(a => { const name = pods[a] ? pods[a].name : a; k.do(() => setPhase(a, 'ghost')); return apiCall(k, 'kcm', 'DELETE', `/api/v1/namespaces/${nsOf(a)}/pods/${name}`, 'DELETE pod (evict)', '{"kind":"DeleteOptions","gracePeriodSeconds":0}', { key: `/registry/pods/${nsOf(a)}/${name}` }); }));
+      await endpoints(k, 'web', 2);
+    } },
+  { who: 'kube-scheduler', cam: 'sched', dist: 80, text: 'The ReplicaSet controllers see fewer Pods than desired and create replacements. The scheduler filters out node-3 because of its taint and places them elsewhere.',
+    run: async k => {
+      k.do(() => spin('replicaset'));
+      await Promise.all([['web-6d8f9c7b5-q2w8r', 'web'], ['metrics-server-6b9c7d-zt5vb', 'metrics']].map(([n]) => apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/pods', 'POST pod', `{"metadata":{"name":"${n}"}}`)));
+      await scheduleOne(k, 'web-…-q2w8r', [['n1', true, 'score 74'], ['n2', true, 'score 69'], ['n3', false, 'taint unreachable:NoExecute']], 'n1');
+      await scheduleOne(k, 'metrics-server-…-zt5vb', [['n2', true, 'score 72']], 'n2');
+      await Promise.all([['web-6d8f9c7b5-q2w8r', 'node-1'], ['metrics-server-6b9c7d-zt5vb', 'node-2']].map(([n, node]) => apiCall(k, 'sched', 'POST', `/api/v1/namespaces/shop/pods/${n}/binding`, 'POST binding', `{"target":{"kind":"Node","name":"${node}"}}`)));
+    } },
+  { who: 'kubelet', cam: 'n1', dist: 80, text: 'node-1 and node-2 already have these images cached, so the replacements start in seconds. The web Service is back to 3 endpoints.',
+    run: async k => {
+      await Promise.all([podStart(k, 'web6', 'n1', 2, 'web-6d8f9c7b5-q2w8r', 'web', '10.244.1.19'), podStart(k, 'metrics2', 'n2', 4, 'metrics-server-6b9c7d-zt5vb', 'metrics', '10.244.2.30')]);
+      await endpoints(k, 'web', 3);
+    } },
+  { who: 'node-3', cam: 'n3', dist: 80, text: 'Power returns. The kubelet renews its Lease, the node goes Ready, and the taint is removed. Its stale containers belong to Pods that no longer exist in the API, so the kubelet cleans them up. Desired state wins.',
+    run: async k => {
+      k.do(() => setNodeUp('n3', true));
+      await apiCall(k, 'n3.kubelet', 'PUT', '/apis/coordination.k8s.io/v1/namespaces/kube-node-lease/leases/node-3', 'PUT lease', '{"spec":{"renewTime":"now"}}', { key: '/registry/leases/kube-node-lease/node-3' });
+      await watch(k, 'n3.kubelet', 'SYNC', 'PodList', 'node-3', '"items": [] (web-…-klmno, metrics-… gone)');
+      await k.send('n3.kubelet', 'n3.containerd', 'CRI', 'StopPodSandbox ×2', 'runtime.v1.RuntimeService/StopPodSandbox\nruntime.v1.RuntimeService/RemovePodSandbox\n(orphaned Pods: web-6d8f9c7b5-klmno, metrics-server-6b9c7d-pp7d2)');
+      k.do(() => { removePod('web3'); removePod('metrics'); });
+      k.say('n3', 'Ready · taint removed · orphans cleaned', 3000, 'ok');
+    } },
+]},
+{ t: 'Scaling the Tide', s: 'metrics-server, HorizontalPodAutoscaler and the aggregation layer', steps: [
+  { who: 'You', cam: 'n2', dist: 150, text: 'A sale starts. Traffic floods in through the ingress, and CPU on the three web Pods climbs.',
+    run: async k => { for (let i = 0; i < 9; i++) { const t = ['web1', 'web2', 'web3'][i % 3]; k.path('you', [{ to: 'lb', proto: 'HTTP', label: 'GET /sale', payload: 'GET /sale HTTP/2' }, { to: 'n1.proxy', proto: 'HTTP', label: 'NodePort', payload: '→ :30443' }, { to: P('ing'), proto: 'HTTP', label: 'GET /sale', payload: 'GET /sale' }, ...podRoute('ing', t, 'HTTP', 'GET /sale', 'GET /sale HTTP/1.1')]); await k.wait(260); } await k.wait(1500); } },
+  { who: 'metrics-server', cam: P('metrics'), text: 'Every 15 s metrics-server scrapes each kubelet\'s <code>/metrics/resource</code> endpoint. The kubelet reads the numbers from cgroups through cAdvisor.',
+    run: k => Promise.all(['n1', 'n2', 'n3'].map(async n => {
+      await k.send(P('metrics'), n + '.kubelet', 'METRICS', 'GET :10250/metrics/resource', `GET https://${NODE[n].ip}:10250/metrics/resource\nAuthorization: Bearer <metrics-server SA token>`);
+      await k.send(n + '.kubelet', P('metrics'), 'METRICS', 'cpu/mem samples', `container_cpu_usage_seconds_total{pod="web-…",container="web"} 1834.2 1728900000000\ncontainer_memory_working_set_bytes{pod="web-…"} 2.41e+08`);
+    })) },
+  { who: 'kube-controller-manager', cam: 'kcm', text: 'The HPA controller asks the API server for <code>metrics.k8s.io</code>. The apiserver doesn\'t store metrics; its <b>aggregation layer</b> proxies the request to metrics-server.',
+    run: async k => {
+      k.do(() => spin('hpa'));
+      await k.send('kcm', 'api', 'REST', 'GET metrics.k8s.io pods', rest('kcm', 'GET', '/apis/metrics.k8s.io/v1beta1/namespaces/shop/pods?labelSelector=app%3Dweb'));
+      await k.send('api', P('metrics'), 'REST', 'proxy → APIService', 'APIService v1beta1.metrics.k8s.io → service kube-system/metrics-server:443\n(aggregation layer forwards the request)');
+      await k.send(P('metrics'), 'api', 'REST', 'PodMetricsList', '{"kind":"PodMetricsList","items":[\n {"metadata":{"name":"web-…-abcde"},"containers":[{"usage":{"cpu":"231m"}}]},\n {"metadata":{"name":"web-…-fghij"},"containers":[{"usage":{"cpu":"229m"}}]},\n {"metadata":{"name":"web-…-klmno"},"containers":[{"usage":{"cpu":"230m"}}]}]}');
+      await k.send('api', 'kcm', 'REST', '200 PodMetricsList', 'HTTP/2 200\n(average 230m of 250m request = 92%)');
+      k.say('kcm', 'HPA: avg CPU <code>92%</code> vs target <code>60%</code> → ⌈3 × 92/60⌉ = <b>5</b>', 4000);
+      await k.wait(900);
+    } },
+  { who: 'kube-controller-manager', text: 'The HPA writes <code>replicas: 5</code> to the Deployment\'s scale subresource. From there the usual chain runs: Deployment → ReplicaSet → 2 new Pods → scheduler.',
+    run: async k => {
+      await apiCall(k, 'kcm', 'PATCH', '/apis/apps/v1/namespaces/shop/deployments/web/scale', 'PATCH deploy/web/scale', '{"spec":{"replicas":5}}', { key: '/registry/deployments/shop/web' });
+      k.do(() => { spin('deployment'); spin('replicaset'); });
+      await Promise.all(['t7vqs', 'p3mzc'].map(s => apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/pods', 'POST pod', `{"metadata":{"name":"web-6d8f9c7b5-${s}"}}`)));
+      await scheduleOne(k, 'web-…-t7vqs', [['n1', true, 'score 71'], ['n3', true, 'score 80']], 'n3');
+      await scheduleOne(k, 'web-…-p3mzc', [['n1', true, 'score 77'], ['n3', true, 'score 66']], 'n1');
+      await Promise.all([['t7vqs', 'node-3'], ['p3mzc', 'node-1']].map(([s, n]) => apiCall(k, 'sched', 'POST', `/api/v1/namespaces/shop/pods/web-6d8f9c7b5-${s}/binding`, 'POST binding', `{"target":{"kind":"Node","name":"${n}"}}`)));
+    } },
+  { who: 'kubelet', cam: 'n1', dist: 140, text: 'Both kubelets start their Pods (the image is cached), readiness passes, and the endpoints grow to 5. Load per Pod drops back toward 55%.',
+    run: async k => {
+      await Promise.all([podStart(k, 'web5', 'n3', 2, 'web-6d8f9c7b5-t7vqs', 'web', '10.244.3.21'), podStart(k, 'web4', 'n1', 2, 'web-6d8f9c7b5-p3mzc', 'web', '10.244.1.23')]);
+      await endpoints(k, 'web', 5);
+    } },
+]},
+{ t: 'Fall and Rise', s: 'Liveness probe failures, container restart and endpoint removal', steps: [
+  { who: 'kubelet', cam: P('web2'), text: 'The kubelet on node-2 runs the web container\'s liveness probe: <code>GET /healthz</code> every 10 s, 1 s timeout, 3 failures allowed.',
+    run: async k => { for (let i = 0; i < 2; i++) { await k.send('n2.kubelet', P('web2'), 'PROBE', 'GET /healthz', 'GET http://10.244.2.15:8080/healthz\nUser-Agent: kube-probe/1.31'); await k.send(P('web2'), 'n2.kubelet', 'PROBE', '200 ok', 'HTTP/1.1 200 OK\n\nok'); } } },
+  { who: 'web Pod', text: 'A deadlock. The process is alive but stuck, and the probes start timing out.',
+    run: async k => {
+      k.do(() => setPhase('web2', 'crash'));
+      for (let i = 1; i <= 3; i++) { await k.send('n2.kubelet', P('web2'), 'PROBE', 'GET /healthz', 'GET http://10.244.2.15:8080/healthz'); k.say(P('web2'), `timeout after 1s · failure ${i}/3`, 1600, 'bad'); await k.wait(600); }
+    } },
+  { who: 'kubelet', cam: 'n2', dist: 60, text: 'After 3 failures the kubelet kills the container (SIGTERM, then SIGKILL after the grace period) and creates a fresh one in the <b>same Pod</b>. Same sandbox, same IP, <code>restartCount: 1</code>.',
+    run: async k => {
+      await k.send('n2.kubelet', 'n2.containerd', 'CRI', 'StopContainer', 'runtime.v1.RuntimeService/StopContainer\ncontainer_id: "9b2e…"\ntimeout: 30   # SIGTERM, SIGKILL at 30s');
+      k.do(() => { pods.web2.box.visible = false; });
+      await apiCall(k, 'n2.kubelet', 'PATCH', '/api/v1/namespaces/shop/pods/web-6d8f9c7b5-fghij/status', 'PATCH Ready=False', '{"status":{"conditions":[{"type":"Ready","status":"False"}],"containerStatuses":[{"name":"web","state":{"terminated":{"reason":"Error","exitCode":137}}}]}}', { key: '/registry/pods/shop/web-6d8f9c7b5-fghij' });
+      await endpoints(k, 'web', 2);
+      await k.send('n2.kubelet', 'n2.containerd', 'CRI', 'Create+StartContainer', 'runtime.v1.RuntimeService/CreateContainer  (attempt: 1)\nruntime.v1.RuntimeService/StartContainer');
+      k.do(() => { pods.web2.restarts = 1; setPhase('web2', 'running'); });
+    } },
+  { who: 'kube-proxy', cam: 'n2', dist: 110, text: 'The readiness probe passes again, the kubelet reports <code>Ready=True</code> and <code>restartCount: 1</code>, and the Pod rejoins the Service. The other replicas carried the traffic in the meantime.',
+    run: async k => {
+      await k.send('n2.kubelet', P('web2'), 'PROBE', 'GET /ready', 'GET http://10.244.2.15:8080/ready'); await k.send(P('web2'), 'n2.kubelet', 'PROBE', '200 ready', 'HTTP/1.1 200 OK');
+      await apiCall(k, 'n2.kubelet', 'PATCH', '/api/v1/namespaces/shop/pods/web-6d8f9c7b5-fghij/status', 'PATCH Ready=True', '{"status":{"conditions":[{"type":"Ready","status":"True"}],"containerStatuses":[{"name":"web","restartCount":1,"ready":true}]}}', { key: '/registry/pods/shop/web-6d8f9c7b5-fghij' });
+      await endpoints(k, 'web', 3);
+    } },
+]},
+{ t: 'Argo CD Sync', s: 'git push → webhook → repo-server render → diff → server-side apply → rollout', steps: [
+  { who: 'You', cam: 'git', dist: 60, text: 'With GitOps you don\'t run kubectl against production. You commit to the deploy repo: <code>web</code> image 2.3.0 → 2.4.0, replicas 3 → 4. Git is now the source of truth.',
+    run: async k => { await k.send('you', 'git', 'GIT', 'git push origin main', 'POST /shop/deploy.git/git-receive-pack HTTP/1.1\nContent-Type: application/x-git-receive-pack-request\n\n1a7e94c..9f3c2ab main\n\ncommit 9f3c2ab\n  apps/web/kustomization.yaml\n-  newTag: 2.3.0\n+  newTag: 2.4.0\n-  replicas: 3\n+  replicas: 4'); k.do(() => { addCommit(); C.git.label.querySelector('span').textContent = 'main @ 9f3c2ab'; }); k.say('git', 'main → <code>9f3c2ab</code>', 2600, 'ok'); } },
+  { who: 'git.realm.io', cam: 'n1', dist: 150, text: 'The Git host fires a webhook. It enters the cluster like any user request (load balancer → ingress) and reaches argocd-server on the platform node. Without the webhook, Argo CD polls every 3 minutes.',
+    run: k => k.path('git', [{ to: 'lb', proto: 'GIT', label: 'POST /api/webhook', payload: 'POST /api/webhook HTTP/1.1\nHost: argocd.realm.io\nX-Hub-Signature-256: sha256=…\n\n{"ref":"refs/heads/main","after":"9f3c2ab…","repository":{"url":"https://git.realm.io/shop/deploy.git"}}' }, { to: 'n1.proxy', proto: 'HTTP', label: 'NodePort', payload: '→ :30443' }, { to: P('ing'), proto: 'HTTP', label: 'host argocd.realm.io', payload: 'Ingress rule argocd.realm.io → argocd-server:443' }, ...podRoute('ing', 'argosrv', 'HTTP', 'POST /api/webhook', 'POST /api/webhook')]) },
+  { who: 'argocd-server', cam: 'n4', dist: 70, text: 'argocd-server matches the repo URL to the Application <code>shop-web</code> and asks for a refresh by annotating it through the Kubernetes API. Argo CD keeps its own state in CRDs too.',
+    run: async k => { await apiCall(k, P('argosrv'), 'PATCH', '/apis/argoproj.io/v1alpha1/namespaces/argocd/applications/shop-web', 'PATCH Application refresh', '{"metadata":{"annotations":{"argocd.argoproj.io/refresh":"normal"}}}', { key: '/registry/argoproj.io/applications/argocd/shop-web' }); await watch(k, P('argoctl'), 'MODIFIED', 'Application', 'shop-web', '"annotations": {"argocd.argoproj.io/refresh": "normal"}'); } },
+  { who: 'argocd-repo-server', text: 'The application-controller asks repo-server for manifests at the new revision. repo-server fetches the commit, runs <code>kustomize build overlays/prod</code>, and caches the result by commit SHA.',
+    run: async k => {
+      await k.send(P('argoctl'), P('argorepo'), 'RPC', 'GenerateManifest', 'repository.RepoServerService/GenerateManifest\nrepo: https://git.realm.io/shop/deploy.git\nrevision: main\npath: apps/web/overlays/prod\nappName: shop-web');
+      await k.send(P('argorepo'), 'git', 'GIT', 'git fetch', 'POST /shop/deploy.git/git-upload-pack HTTP/1.1\nwant 9f3c2ab… have 1a7e94c…');
+      await k.send('git', P('argorepo'), 'GIT', 'packfile (3 objects)', 'HTTP/1.1 200 OK\nContent-Type: application/x-git-upload-pack-result\n\nPACK v2, 3 objects, 1.1 KiB');
+      k.say(P('argorepo'), '<code>kustomize build</code> → 7 manifests', 2600, 'ok'); await k.wait(600);
+      await k.send(P('argorepo'), P('argoctl'), 'RPC', 'ManifestResponse', 'ManifestResponse {\n  manifests: [Deployment/web, Service/web, Ingress/web, HPA/web, …]\n  revision: 9f3c2ab\n}');
+    } },
+  { who: 'argocd-application-controller', cam: P('argoctl'), text: 'The controller diffs the desired manifests against live state from its watch cache: <b>OutOfSync</b>. It applies the change with server-side apply. To the API server it is just another client, going through the same authn, RBAC and admission gates.',
+    run: async k => { k.say(P('argoctl'), 'OutOfSync: Deployment/web · image <code>2.3.0→2.4.0</code> · replicas <code>3→4</code>', 3400, 'bad'); await k.wait(900); await apiCall(k, P('argoctl'), 'PATCH', '/apis/apps/v1/namespaces/shop/deployments/web?fieldManager=argocd-controller', 'PATCH (server-side apply)', 'Content-Type: application/apply-patch+yaml\n\napiVersion: apps/v1\nkind: Deployment\nmetadata: {name: web, namespace: shop}\nspec:\n  replicas: 4\n  template:\n    spec:\n      containers:\n      - name: web\n        image: registry.realm.io/shop/web:2.4.0', { key: '/registry/deployments/shop/web', reply: '200 OK' }); } },
+  { who: 'kube-controller-manager', cam: 'kcm', text: 'From here Kubernetes takes over. A new pod template means a new ReplicaSet. The Deployment controller rolls it out with <code>maxSurge 25%</code> and <code>maxUnavailable 25%</code>, scaling the new ReplicaSet up as the old one scales down. We follow one new Pod.',
+    run: async k => {
+      await watch(k, 'kcm', 'MODIFIED', 'Deployment', 'web', '"spec": {"replicas": 4}'); k.do(() => { spin('deployment'); spin('replicaset'); });
+      await apiCall(k, 'kcm', 'POST', '/apis/apps/v1/namespaces/shop/replicasets', 'POST replicaset web-7f5c8', '{"metadata":{"name":"web-7f5c8d9f4"},"spec":{"replicas":1}}');
+      await apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/pods', 'POST pod', '{"metadata":{"name":"web-7f5c8d9f4-h2k9s"}}');
+      await scheduleOne(k, 'web-7f5c8d9f4-h2k9s', [['n2', true, 'score 76'], ['n3', true, 'score 71']], 'n2');
+      await apiCall(k, 'sched', 'POST', '/api/v1/namespaces/shop/pods/web-7f5c8d9f4-h2k9s/binding', 'POST binding', '{"target":{"kind":"Node","name":"node-2"}}');
+      await podStart(k, 'webv2', 'n2', 3, 'web-7f5c8d9f4-h2k9s', 'web', '10.244.2.33', { pull: true, img: 'registry.realm.io/shop/web:2.4.0' });
+    } },
+  { who: 'argocd-application-controller', cam: 'n4', dist: 70, text: 'When the rollout completes, the controller records the result on the Application: <b>Synced</b> to <code>9f3c2ab</code>, <b>Healthy</b>. If someone hand-edits the Deployment later, Argo CD flags drift and (with selfHeal) reverts it.',
+    run: async k => { await apiCall(k, P('argoctl'), 'PATCH', '/apis/argoproj.io/v1alpha1/namespaces/argocd/applications/shop-web/status', 'PATCH Application status', '{"status":{"sync":{"status":"Synced","revision":"9f3c2ab"},"health":{"status":"Healthy"},"operationState":{"phase":"Succeeded"}}}', { key: '/registry/argoproj.io/applications/argocd/shop-web' }); k.say(P('argoctl'), 'Synced ✓ · Healthy ✓ · <code>9f3c2ab</code>', 3200, 'ok'); } },
+]},
+{ t: 'Flux Reconcile', s: 'GitRepository artifact → Kustomization build → apply → health check', steps: [
+  { who: 'You', cam: 'git', dist: 60, text: 'Same idea, different tool. Flux is a set of controllers with no central server. You commit <code>orders</code> replicas 1 → 2.',
+    run: async k => { await k.send('you', 'git', 'GIT', 'git push origin main', 'POST /shop/deploy.git/git-receive-pack\n\n9f3c2ab..4be1d0c main\n  apps/orders/deployment.yaml\n-  replicas: 1\n+  replicas: 2'); k.do(() => { addCommit(); C.git.label.querySelector('span').textContent = 'main @ 4be1d0c'; }); } },
+  { who: 'source-controller', cam: P('fluxsrc'), text: 'source-controller reconciles the <code>GitRepository</code> on its interval (1 m here). It fetches the new commit, packs it into a tarball artifact with a sha256 digest, and serves it over HTTP inside the cluster.',
+    run: async k => {
+      await k.send(P('fluxsrc'), 'git', 'GIT', 'git fetch (interval 1m)', 'POST /shop/deploy.git/git-upload-pack\nwant 4be1d0c…');
+      await k.send('git', P('fluxsrc'), 'GIT', 'packfile', 'PACK v2, 2 objects');
+      k.say(P('fluxsrc'), 'artifact <code>4be1d0c.tar.gz</code> · sha256:e1c0…', 2800, 'ok');
+      await apiCall(k, P('fluxsrc'), 'PATCH', '/apis/source.toolkit.fluxcd.io/v1/namespaces/flux-system/gitrepositories/shop/status', 'PATCH GitRepository status', '{"status":{"artifact":{"revision":"main@sha1:4be1d0c","url":"http://source-controller.flux-system.svc/gitrepository/flux-system/shop/4be1d0c.tar.gz","digest":"sha256:e1c0…"}}}', { key: '/registry/source.toolkit.fluxcd.io/gitrepositories/flux-system/shop' });
+    } },
+  { who: 'kustomize-controller', cam: P('fluxkus'), text: 'kustomize-controller watches GitRepository objects. It sees the new revision, downloads the artifact from source-controller, runs <code>kustomize build</code>, decrypts any SOPS secrets, and does a server-side dry-run to find what changed.',
+    run: async k => {
+      await watch(k, P('fluxkus'), 'MODIFIED', 'GitRepository', 'shop', '"status": {"artifact": {"revision": "main@sha1:4be1d0c"}}');
+      await k.send(P('fluxkus'), P('fluxsrc'), 'HTTP', 'GET artifact tar.gz', 'GET http://source-controller.flux-system.svc/gitrepository/flux-system/shop/4be1d0c.tar.gz');
+      await k.send(P('fluxsrc'), P('fluxkus'), 'HTTP', '200 tar.gz', 'HTTP/1.1 200 OK\nContent-Type: application/x-gzip\n(verified against sha256:e1c0…)');
+      k.say(P('fluxkus'), 'build ./apps/prod → dry-run diff: <code>Deployment/orders</code> configured', 3000); await k.wait(700);
+    } },
+  { who: 'kustomize-controller', cam: 'api', dist: 90, text: 'It applies with server-side apply under field manager <code>kustomize-controller</code>, then the normal Deployment chain creates the second orders Pod.',
+    run: async k => {
+      await apiCall(k, P('fluxkus'), 'PATCH', '/apis/apps/v1/namespaces/shop/deployments/orders?fieldManager=kustomize-controller', 'PATCH (server-side apply)', 'Content-Type: application/apply-patch+yaml\n\nspec:\n  replicas: 2', { key: '/registry/deployments/shop/orders', reply: '200 OK' });
+      k.do(() => spin('replicaset'));
+      await apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/pods', 'POST pod', '{"metadata":{"name":"orders-84bd6f5c4-rk2bn"}}');
+      await scheduleOne(k, 'orders-…-rk2bn', [['n2', true, 'score 58 (spread: orders already here)'], ['n3', true, 'score 85']], 'n3');
+      await apiCall(k, 'sched', 'POST', '/api/v1/namespaces/shop/pods/orders-84bd6f5c4-rk2bn/binding', 'POST binding', '{"target":{"kind":"Node","name":"node-3"}}');
+      await podStart(k, 'orders2', 'n3', 3, 'orders-84bd6f5c4-rk2bn', 'orders', '10.244.3.26', { pull: true });
+    } },
+  { who: 'kustomize-controller', cam: 'n4', dist: 70, text: 'Flux waits for the objects to become healthy (kstatus), then marks the <code>Kustomization</code> Ready with the applied revision. notification-controller can post the result to chat or back to the commit status.',
+    run: async k => { await apiCall(k, P('fluxkus'), 'PATCH', '/apis/kustomize.toolkit.fluxcd.io/v1/namespaces/flux-system/kustomizations/shop/status', 'PATCH Kustomization Ready', '{"status":{"conditions":[{"type":"Ready","status":"True","reason":"ReconciliationSucceeded","message":"Applied revision: main@sha1:4be1d0c"}],"lastAppliedRevision":"main@sha1:4be1d0c"}}', { key: '/registry/kustomize.toolkit.fluxcd.io/kustomizations/flux-system/shop' }); k.say(P('fluxkus'), 'Ready · Applied revision <code>main@sha1:4be1d0c</code>', 3200, 'ok'); } },
+]},
+{ t: 'The Policy Gate', s: 'Admission webhooks: Kyverno mutates, then rejects a :latest image', steps: [
+  { who: 'You', cam: 'api', dist: 120, text: 'You try a quick shortcut: <code>kubectl run debug --image=nginx:latest -n shop</code>.',
+    run: k => k.send('you', 'api', 'REST', 'POST pods', rest('you', 'POST', '/api/v1/namespaces/shop/pods', '{"kind":"Pod","metadata":{"name":"debug"},"spec":{"containers":[{"name":"debug","image":"nginx:latest"}]}}')) },
+  { who: 'kube-apiserver', cam: 'api', text: 'Authentication and RBAC pass. Next comes <b>mutating admission</b>: the apiserver sends an <code>AdmissionReview</code> to every matching mutating webhook. Kyverno adds default labels and returns a JSON patch.',
+    run: async k => {
+      k.do(() => { flashGate(0); flashGate(1); }); k.say('api', 'authn ✓ · RBAC ✓', 2000, 'ok'); await k.wait(500);
+      await k.send('api', P('kyverno'), 'HOOK', 'AdmissionReview (mutate)', 'POST https://kyverno-svc.kyverno.svc:443/mutate?timeout=10s\n\n{"apiVersion":"admission.k8s.io/v1","kind":"AdmissionReview",\n "request":{"uid":"e911…","kind":{"kind":"Pod"},"operation":"CREATE",\n  "userInfo":{"username":"you","groups":["shop-devs"]},\n  "object":{"spec":{"containers":[{"image":"nginx:latest"}]}}}}');
+      await k.send(P('kyverno'), 'api', 'HOOK', 'allowed + JSONPatch', '{"response":{"uid":"e911…","allowed":true,"patchType":"JSONPatch",\n "patch":"[{\\"op\\":\\"add\\",\\"path\\":\\"/metadata/labels/team\\",\\"value\\":\\"shop\\"}]"}}');
+    } },
+  { who: 'Kyverno', cam: P('kyverno'), text: 'After schema validation comes <b>validating admission</b>. Kyverno checks the ClusterPolicy <code>disallow-latest-tag</code>, and the image tag <code>:latest</code> fails it.',
+    run: async k => {
+      k.do(() => flashGate(2));
+      await k.send('api', P('kyverno'), 'HOOK', 'AdmissionReview (validate)', 'POST https://kyverno-svc.kyverno.svc:443/validate/fail?timeout=10s\n\n{"request":{"uid":"e912…","operation":"CREATE","object":{…patched Pod…}}}');
+      k.say(P('kyverno'), 'policy <code>disallow-latest-tag</code> · rule <code>validate-image-tag</code> → fail', 3200, 'bad'); await k.wait(700);
+      await k.send(P('kyverno'), 'api', 'HOOK', 'allowed: false', '{"response":{"uid":"e912…","allowed":false,\n "status":{"code":400,"message":"validation error: Using a mutable image tag e.g. \'latest\' is not allowed. rule validate-image-tag failed at path /spec/containers/0/image/"}}}');
+    } },
+  { who: 'kube-apiserver', cam: 'you', dist: 70, text: 'The request is rejected <b>before</b> it reaches etcd. Nothing is stored, no controller or scheduler ever hears about it, and you get the policy message back.',
+    run: async k => { k.say('etcd0', 'untouched · nothing persisted', 2600); await k.send('api', 'you', 'REST', '400 denied by webhook', 'HTTP/2 400 Bad Request\n\nError from server: admission webhook "validate.kyverno.svc-fail" denied the request:\n\npolicy Pod/shop/debug for resource violation:\n\ndisallow-latest-tag:\n  validate-image-tag: Using a mutable image tag e.g. \'latest\' is not allowed.'); } },
+]},
+{ t: 'Roots of Storage', s: 'StatefulSet → PVC → CSI provision → attach → mount → Pod', steps: [
+  { who: 'You', cam: 'api', dist: 120, text: 'You apply a <code>StatefulSet</code> for PostgreSQL with a <code>volumeClaimTemplate</code> asking for 20Gi of <code>pd-ssd</code>.',
+    run: k => apiCall(k, 'you', 'POST', '/apis/apps/v1/namespaces/shop/statefulsets', 'POST statefulset', '{"kind":"StatefulSet","metadata":{"name":"orders-db"},"spec":{"serviceName":"orders-db","replicas":1,\n "volumeClaimTemplates":[{"metadata":{"name":"data"},"spec":{"accessModes":["ReadWriteOnce"],"storageClassName":"pd-ssd","resources":{"requests":{"storage":"20Gi"}}}}]}}', { reply: true }) },
+  { who: 'kube-controller-manager', cam: 'kcm', text: 'The StatefulSet controller creates the claim <code>data-orders-db-0</code> and then Pod <code>orders-db-0</code>, with stable names and ordinals. The StorageClass uses <code>WaitForFirstConsumer</code>, so no disk exists until a node is chosen (zones matter).',
+    run: async k => { k.do(() => spin('replicaset')); await watch(k, 'kcm', 'ADDED', 'StatefulSet', 'orders-db'); await apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/persistentvolumeclaims', 'POST pvc', '{"metadata":{"name":"data-orders-db-0"},"spec":{"storageClassName":"pd-ssd","resources":{"requests":{"storage":"20Gi"}}}}'); await apiCall(k, 'kcm', 'POST', '/api/v1/namespaces/shop/pods', 'POST pod orders-db-0', '{"metadata":{"name":"orders-db-0"},"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"data-orders-db-0"}}]}}'); } },
+  { who: 'kube-scheduler', cam: 'sched', dist: 80, text: 'The scheduler picks a node, then writes <code>volume.kubernetes.io/selected-node: node-3</code> onto the PVC so the disk gets created in node-3\'s zone.',
+    run: async k => { await scheduleOne(k, 'orders-db-0', [['n1', true, 'score 66'], ['n2', true, 'score 63'], ['n3', true, 'score 81']], 'n3'); await apiCall(k, 'sched', 'PATCH', '/api/v1/namespaces/shop/persistentvolumeclaims/data-orders-db-0', 'PATCH pvc selected-node', '{"metadata":{"annotations":{"volume.kubernetes.io/selected-node":"node-3"}}}', { key: '/registry/persistentvolumeclaims/shop/data-orders-db-0' }); } },
+  { who: 'CSI controller', cam: 'disks', dist: 110, text: 'The CSI controller\'s external-provisioner sidecar watches PVCs. It calls the driver\'s <code>CreateVolume</code>, which calls the cloud API, and a new 20Gi disk exists. It then creates a PersistentVolume, and the PV controller binds it to the claim.',
+    run: async k => {
+      await watch(k, P('csi'), 'MODIFIED', 'PersistentVolumeClaim', 'data-orders-db-0', '"annotations": {"volume.kubernetes.io/selected-node": "node-3"}');
+      await k.send(P('csi'), 'disks', 'CSI', 'CreateVolume 20Gi', 'csi.v1.Controller/CreateVolume\nname: pvc-3c1e9a7f-…\ncapacity_range { required_bytes: 21474836480 }\naccessibility_requirements { preferred { segments { topology.kubernetes.io/zone: a } } }\n→ cloud API: disks.insert(type=pd-ssd, size=20GB, zone=a)');
+      k.do(() => addDisk(0xf2a65a));
+      await k.send('disks', P('csi'), 'CSI', 'volume_id', 'CreateVolumeResponse { volume { volume_id: "projects/realm/zones/a/disks/pvc-3c1e9a7f" capacity_bytes: 21474836480 } }');
+      await apiCall(k, P('csi'), 'POST', '/api/v1/persistentvolumes', 'POST pv', '{"kind":"PersistentVolume","metadata":{"name":"pvc-3c1e9a7f"},"spec":{"csi":{"driver":"pd.csi.storage.gke.io","volumeHandle":"…/pvc-3c1e9a7f"},"claimRef":{"name":"data-orders-db-0"}}}');
+      k.say('kcm', 'PV controller: <code>data-orders-db-0</code> Bound ↔ pvc-3c1e9a7f', 2800, 'ok');
+      await apiCall(k, 'sched', 'POST', '/api/v1/namespaces/shop/pods/orders-db-0/binding', 'POST binding', '{"target":{"kind":"Node","name":"node-3"}}');
+    } },
+  { who: 'CSI controller', cam: 'n3', dist: 100, text: 'The attach/detach controller creates a <code>VolumeAttachment</code>. external-attacher sees it and calls <code>ControllerPublishVolume</code>, and the cloud attaches the disk to node-3\'s VM as a block device.',
+    run: async k => {
+      await apiCall(k, 'kcm', 'POST', '/apis/storage.k8s.io/v1/volumeattachments', 'POST VolumeAttachment', '{"spec":{"attacher":"pd.csi.storage.gke.io","nodeName":"node-3","source":{"persistentVolumeName":"pvc-3c1e9a7f"}}}');
+      await watch(k, P('csi'), 'ADDED', 'VolumeAttachment', 'csi-8a1f…');
+      await k.send(P('csi'), 'disks', 'CSI', 'ControllerPublishVolume', 'csi.v1.Controller/ControllerPublishVolume\nvolume_id: …/pvc-3c1e9a7f\nnode_id: node-3\n→ cloud API: instances.attachDisk(node-3)');
+      await k.send('disks', 'n3.kubelet', 'CSI', '/dev/nvme1n1 attached', 'block device appears on node-3 VM:\n/dev/disk/by-id/google-pvc-3c1e9a7f → /dev/nvme1n1');
+      await apiCall(k, P('csi'), 'PATCH', '/apis/storage.k8s.io/v1/volumeattachments/csi-8a1f/status', 'PATCH attached=true', '{"status":{"attached":true}}');
+    } },
+  { who: 'kubelet', cam: 'n3', dist: 70, text: 'On node-3 the kubelet calls the CSI node plugin (a DaemonSet on every node): <code>NodeStageVolume</code> formats the disk as ext4 and mounts it globally, and <code>NodePublishVolume</code> bind-mounts it into the Pod\'s directory. Then the Postgres container starts with its data in place.',
+    run: k => podStart(k, 'db', 'n3', 4, 'orders-db-0', 'db', '10.244.3.30', { pull: true, mount: '/var/lib/postgresql/data ← pvc-3c1e9a7f', volume: async () => {
+      await k.send('n3.kubelet', 'n3.kubelet', 'CSI', 'NodeStage+Publish', 'csi.v1.Node/NodeStageVolume\n  staging_target_path: /var/lib/kubelet/plugins/kubernetes.io/csi/…/globalmount\n  → mkfs.ext4 /dev/nvme1n1 (first use) ; mount\ncsi.v1.Node/NodePublishVolume\n  target_path: /var/lib/kubelet/pods/<uid>/volumes/kubernetes.io~csi/pvc-3c1e9a7f/mount\n  → bind mount');
+      k.say('n3.kubelet', 'volume mounted · ext4 · 20Gi', 2600, 'ok');
+    } }) },
+]},
+{ t: 'The Watchers', s: 'Prometheus service discovery and pull-based scraping', steps: [
+  { who: 'Prometheus', cam: P('prom'), text: 'Prometheus discovers targets through Kubernetes itself. Its <code>kubernetes_sd_configs</code> list and watch Pods, Endpoints and Nodes, so new replicas become scrape targets automatically.',
+    run: async k => { await k.send(P('prom'), 'api', 'REST', 'GET pods?watch=1', rest(P('prom'), 'GET', '/api/v1/pods?watch=1&allowWatchBookmarks=true')); await watch(k, P('prom'), 'ADDED', 'Pod', 'web-6d8f9c7b5-abcde', '"annotations": {"prometheus.io/scrape": "true", "prometheus.io/port": "8080"}'); k.say(P('prom'), 'targets discovered: 14 · relabelled into jobs', 2800, 'ok'); } },
+  { who: 'Prometheus', cam: 'n2', dist: 190, text: 'Every 30 s it <b>pulls</b> plain-text metrics: each kubelet\'s <code>/metrics/cadvisor</code> for container usage, every annotated Pod\'s <code>/metrics</code>, and the apiserver\'s own <code>/metrics</code> (request latency, etcd timings).',
+    run: async k => {
+      const tgt = [['n1.kubelet', 'GET /metrics/cadvisor', 'container_cpu_usage_seconds_total{namespace="shop",pod="web-…"} 1834.2'], ['n2.kubelet', 'GET /metrics/cadvisor', 'container_memory_working_set_bytes{pod="orders-…"} 1.9e+08'], ['n3.kubelet', 'GET /metrics/cadvisor', 'container_network_receive_bytes_total{pod="web-…"} 8.1e+09'], [P('web1'), 'GET /metrics', 'http_requests_total{code="200",path="/"} 128331'], [P('orders'), 'GET /metrics', 'http_request_duration_seconds_bucket{le="0.1"} 99120'], ['api', 'GET /metrics', 'apiserver_request_duration_seconds_bucket{verb="LIST",resource="pods",le="0.25"} 4411\netcd_request_duration_seconds_bucket{operation="get",le="0.005"} 99031']];
+      await Promise.all(tgt.map(([t, l, body], i) => k.wait(i * 250).then(async () => { await k.send(P('prom'), t, 'METRICS', l, `${l} HTTP/1.1\nAccept: application/openmetrics-text;version=1.0.0\nAuthorization: Bearer <prometheus SA token>`); await k.send(t, P('prom'), 'METRICS', '200 text/plain', `HTTP/1.1 200 OK\nContent-Type: text/plain; version=0.0.4\n\n# TYPE …\n${body}\n…`); })));
+    } },
+  { who: 'Prometheus', text: 'Samples land in the TSDB, recording and alerting rules run over them, and Alertmanager would page someone if a rule such as <code>KubePodCrashLooping</code> fired. Pull, not push: a target that stops answering shows up as <code>up == 0</code>.',
+    run: async k => { k.say(P('prom'), '<code>up{job="kubelet"} = 1</code> ×3 · 41,880 series · rules OK', 3400, 'ok'); await k.wait(1400); } },
+]},
+];
+async function podStepSandbox(k, a, node, slot, name, ip) {
+  await watch(k, node + '.kubelet', 'ADDED', 'Pod', name, `"spec": {"nodeName": "${NODE[node].name}"}`);
+  await k.send(node + '.kubelet', node + '.containerd', 'CRI', 'RunPodSandbox', `runtime.v1.RuntimeService/RunPodSandbox\nconfig { metadata { name: "${name}" namespace: "shop" } }\n→ pause:3.10 + netns\n→ CNI ADD (flannel → bridge, host-local IPAM)`);
+  k.do(() => spawnPod(a, node, slot, name, 'checkout', ip, 'sandbox'));
+  k.say(node + '.containerd', `CNI ADD → <code>${ip}</code> on cni0`, 2800, 'ok');
+}
+async function pullOnly(k, n, img) {
+  const cd = n + '.containerd';
+  await k.send(n + '.kubelet', cd, 'CRI', 'PullImage', `runtime.v1.ImageService/PullImage\nimage { image: "${img}" }`);
+  await k.send(cd, 'registry', 'OCI', 'GET manifest', `GET /v2/shop/checkout/manifests/1.4.2 HTTP/1.1\nHost: registry.realm.io\nAccept: application/vnd.oci.image.manifest.v1+json`);
+  await k.send('registry', cd, 'OCI', 'manifest (3 layers)', `HTTP/1.1 200 OK\nDocker-Content-Digest: sha256:4c1f…\n\n{"layers":[{"digest":"sha256:${LAYERS[0]}…"},{"digest":"sha256:${LAYERS[1]}…"},{"digest":"sha256:${LAYERS[2]}…"}]}`);
+  await Promise.all(LAYERS.map((l, i) => k.wait(i * 220).then(() => k.send('registry', cd, 'OCI', 'blob ' + l.slice(0, 7), `GET /v2/shop/checkout/blobs/sha256:${l}…\n→ 200, gzip tar, digest verified, unpacked to overlayfs`))));
+  k.say(cd, 'image unpacked · 3 layers verified', 2400, 'ok');
+}
+
+// ---------- quest runner ----------
+let run = null, nextRes = null, afterQuest = null, auto = true;
+const flowEl = $('#flow'), whoEl = $('#who'), txtEl = $('#txt'), stepEl = $('#stepn'), nextBtn = $('#bNext');
+let typer = 0;
+function dialogue(who, html) {
+  whoEl.textContent = who; clearInterval(typer);
+  if (REDUCED) { txtEl.innerHTML = html; return; }
+  // typewriter over visible text while keeping inline tags intact
+  const parts = html.split(/(<[^>]+>)/); let i = 0, ci = 0, out = '';
+  txtEl.innerHTML = '';
+  typer = setInterval(() => {
+    for (let n = 0; n < 3 && i < parts.length; n++) {
+      const p = parts[i];
+      if (p.startsWith('<')) { out += p; i++; continue; }
+      out += p[ci++] || ''; if (ci >= p.length) { i++; ci = 0; }
+    }
+    txtEl.innerHTML = out; if (i >= parts.length) clearInterval(typer);
+  }, 16);
+}
+function stopQuest() {
+  if (run) run.dead = true; run = null; afterQuest = null; spot = null; flowEl.innerHTML = '';
+  const nr = nextRes; nextRes = null; nr && nr();
+  waiters.forEach(w => w.res()); waiters = [];
+  clearPackets();
+  nextBtn.disabled = true;
+}
+function renderFlow(q, who) {
+  if (q.tour) { flowEl.innerHTML = ''; return; }
+  const cast = [...new Set(q.steps.map(s => s.who))];
+  const upto = who ? q.steps.findIndex(s => s.who === who) + 1 : q.steps.length;
+  const seen = new Set(q.steps.slice(0, upto).map(s => s.who));
+  flowEl.innerHTML = cast.map(w => `<span class="${w === who ? 'now' : seen.has(w) ? 'done' : ''}">${esc(w)}</span>`).join('<i>→</i>');
+}
+async function startQuest(qi) {
+  stopQuest(); clearLog();
+  const r = run = { dead: false }, q = QUESTS[qi], k = mkKit(r);
+  document.querySelectorAll('.q').forEach((b, i) => b.classList.toggle('on', i === qi));
+  closeDrawers(); $('#insp').hidden = true;
+  resetWorld(); controls.autoRotate = false;
+  for (let i = 0; i < q.steps.length; i++) {
+    if (r.dead) return;
+    const s = q.steps[i];
+    stepEl.textContent = `${q.t} · ${i + 1}/${q.steps.length}`;
+    dialogue(s.who, s.text);
+    spot = new Set(s.cam && s.cam !== 'home' ? [s.cam] : []);
+    renderFlow(q, s.who);
+    if (s.cam === 'home') flyHome(); else if (s.cam && !follow) flyTo(s.cam, s.dist);
+    nextBtn.disabled = true;
+    await wait(500); if (r.dead) return;
+    try { await s.run(k); } catch (e) { console.error(e); }
+    if (r.dead) return;
+    if (i < q.steps.length - 1) {
+      nextBtn.disabled = false;
+      await new Promise(res => { nextRes = res; if (auto) wait(Math.max(1800, s.text.replace(/<[^>]+>/g, '').length * 26)).then(res); });
+      nextRes = null;
+    }
+  }
+  if (r.dead) return;
+  spot = null; renderFlow(q, null);
+  stepEl.textContent = `${q.t} · complete`;
+  if (qi + 1 < QUESTS.length) { nextBtn.disabled = false; afterQuest = () => startQuest(qi + 1); dialogue('Skyrealm', `Quest complete. Press Continue for <b>${QUESTS[qi + 1].t}</b>, pick another quest, or keep exploring.`); }
+}
+
+// ---------- ambient life ----------
+let ambOn = true, ambAcc = 0;
+const upKeys = () => NODES.filter(N => N.up).map(N => N.key);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function ambientTick(ds) {
+  if (!ambOn || run) return; ambAcc += ds; if (ambAcc < 650) return; ambAcc = 0;
+  const A = { ambient: true };
+  const r = Math.random();
+  if (r < .22) {
+    const n = pick(upKeys());
+    launch({ ...A, from: n + '.kubelet', legs: [{ to: 'api', proto: 'REST', label: 'PUT lease', payload: rest(n + '.kubelet', 'PUT', `/apis/coordination.k8s.io/v1/namespaces/kube-node-lease/leases/${NODE[n].name}`, '{"spec":{"renewTime":"…"}}') }, { to: 'etcd0', proto: 'GRPC', label: 'Txn Put lease', payload: `Put /registry/leases/kube-node-lease/${NODE[n].name}` }] })
+      .then(() => { launch({ ...A, from: 'etcd0', legs: [{ to: 'etcd1', proto: 'RAFT', label: 'MsgApp', payload: 'MsgApp term 7 (lease renew)' }] }); launch({ ...A, from: 'etcd0', legs: [{ to: 'etcd2', proto: 'RAFT', label: 'MsgApp', payload: 'MsgApp term 7 (lease renew)' }] }); });
+  } else if (r < .52) {
+    const webs = Object.keys(pods).filter(a => pods[a].app === 'web' && NODE[pods[a].node].up && pods[a].phase === 'running');
+    if (!webs.length || !pods.ing) return;
+    const t = pick(webs);
+    launch({ ...A, from: 'you', legs: [{ to: 'lb', proto: 'HTTP', label: 'GET /', payload: 'GET / HTTP/2\nHost: shop.realm.io' }, { to: 'n1.proxy', proto: 'HTTP', label: 'NodePort 30443', payload: 'DNAT → ingress-nginx' }, { to: P('ing'), proto: 'HTTP', label: 'GET /', payload: 'GET /' }, ...podRoute('ing', t, 'HTTP', 'GET /', 'GET / HTTP/1.1')] });
+  } else if (r < .64) {
+    launch({ ...A, from: 'etcd0', legs: [{ to: pick(['etcd1', 'etcd2']), proto: 'RAFT', label: 'heartbeat', payload: 'raftpb.Message type: MsgHeartbeat term: 7 commit: …' }] });
+  } else if (r < .8) {
+    const to = pick(['kcm', 'sched', ...upKeys().map(n => n + '.kubelet'), ...upKeys().map(n => n + '.proxy')]);
+    launch({ ...A, from: 'api', legs: [{ to, proto: 'WATCH', label: 'BOOKMARK', payload: `{"type":"BOOKMARK","object":{"metadata":{"resourceVersion":"${RV}"}}}` }] });
+  } else if (r < .9) {
+    const live = Object.keys(pods).filter(a => NODE[pods[a].node].up && pods[a].phase === 'running');
+    if (!live.length) return; const a = pick(live);
+    launch({ ...A, from: pods[a].node + '.kubelet', legs: [{ to: P(a), proto: 'PROBE', label: 'GET /healthz', payload: `GET http://${pods[a].ip}/healthz\nUser-Agent: kube-probe/1.31` }] });
+  } else if (pods.prom) {
+    const n = pick(upKeys());
+    launch({ ...A, from: P('prom'), legs: [{ to: n + '.kubelet', proto: 'METRICS', label: 'scrape cadvisor', payload: `GET https://${NODE[n].ip}:10250/metrics/cadvisor` }] });
+  }
+}
+
+// ---------- inspector ----------
+const infoEl = $('#info');
+const INFO = {
+  api: () => ({ p: 'The front door of the cluster and the <b>only</b> component that talks to etcd. Everything else reads and writes state through its REST API and keeps long-lived <b>watch</b> streams open to hear about changes.', dl: [['Listens', '192.168.1.10:6443 (HTTPS)'], ['To etcd', 'https://127.0.0.1:2379 (mTLS)'], ['Request path', 'authn → authz (RBAC) → mutating admission → schema validation → validating admission → etcd'], ['Extends via', 'CRDs, aggregated APIs (metrics.k8s.io), admission webhooks']], ul: ['Gold rings on the tower = the three gates. They flash as requests pass.', 'Serves watches from an in-memory cache, so etcd isn\'t hit for every reader.'] }),
+  etcd: c => ({ p: `Consistent key-value store holding all cluster state under <code>/registry/…</code>. This member is the Raft <b>${c.role}</b>. Writes go to the leader, which replicates them to followers and commits once a majority (2 of 3) has fsync'd the entry.`, dl: [['Client port', ':2379 (gRPC, mTLS)'], ['Peer port', ':2380 (Raft)'], ['Term', '7'], ['Tolerates', '1 member failure (of 3)']] }),
+  sched: () => ({ p: 'Watches for Pods with an empty <code>spec.nodeName</code>. For each: <b>Filter</b> (NodeResourcesFit, TaintToleration, NodeAffinity, VolumeBinding…) → <b>Score</b> (LeastAllocated, ImageLocality, PodTopologySpread…) → <b>Bind</b>. It never starts anything. It only writes a Binding.', dl: [['Mode', 'leader-elected (Lease kube-system/kube-scheduler)'], ['Profile', 'default-scheduler']], ul: ['Its telescope turns toward the node it is evaluating.'] }),
+  kcm: () => ({ p: 'One binary running dozens of <b>reconcile loops</b>. Each watches desired state and current state, and acts to close the gap. The gears are the controllers in this realm\'s quests.', ul: ['<b>Deployment</b>: manages ReplicaSets and rollouts', '<b>ReplicaSet</b> (and StatefulSet, Job…): keeps N Pods', '<b>EndpointSlice</b>: maps Services to ready Pod IPs', '<b>Node lifecycle</b>: watches Leases, taints unreachable nodes', '<b>HPA</b>: scales on metrics', 'also: Namespace, ServiceAccount, PV binder, attach/detach, GC…'] }),
+  node: c => { const N = NODE[c.node]; return { p: `A worker machine${N.pool ? ' in the <b>platform</b> pool, tainted <code>pool=platform:NoSchedule</code> so only tooling with a matching toleration lands here' : ''}. It runs kubelet, kube-proxy and containerd. Pods get IPs from its /24.`, dl: [['Node IP', N.ip], ['Pod CIDR', N.cidr], ['Status', N.up ? 'Ready' : 'NotReady (lease expired)'], ['Pods', Object.values(pods).filter(p => p.node === c.node).map(p => p.name).join('\n') || '—']] }; },
+  kubelet: c => ({ p: 'The node agent. Watches Pods bound to this node, drives containerd over CRI to make them real, mounts volumes via CSI, runs probes, and reports status. Renews a heartbeat <code>Lease</code> every 10 s.', dl: [['Node', NODE[c.node].name], ['Port', ':10250 (HTTPS: logs, exec, metrics)'], ['Runtime socket', 'unix:///run/containerd/containerd.sock']] }),
+  containerd: c => ({ p: 'The container runtime (CRI implementation). Pulls images and unpacks layers into snapshots, creates the pod <b>sandbox</b> (pause container + network namespace), calls the CNI plugin to wire networking, and starts containers through a shim and runc.', dl: [['Node', NODE[c.node].name], ['CNI', 'flannel → bridge cni0 + host-local IPAM'], ['Low-level', 'containerd-shim-runc-v2 → runc']] }),
+  proxy: c => ({ p: 'Watches Services and EndpointSlices and programs the node\'s kernel (iptables here; IPVS or nftables are options), so a virtual ClusterIP or NodePort maps to real Pod IPs. <b>Packets never pass through the kube-proxy process.</b> The gate is the rules it wrote, and it glows when they change.', dl: [['Node', NODE[c.node].name], ['Chains', 'KUBE-SERVICES → KUBE-SVC-* → KUBE-SEP-* (DNAT)'], ['NodePorts', '30000–32767']] }),
+  vtep: c => ({ p: 'flannel\'s VXLAN tunnel endpoint. Pod traffic for another node\'s /24 is wrapped in an outer UDP packet (port 8472) addressed node-to-node, then unwrapped on arrival. Pods see one flat network.', dl: [['Node', NODE[c.node].name], ['VNI', '1'], ['MTU', '1450 (50 bytes VXLAN overhead)']] }),
+  pod: c => { const p = pods[c.pod]; if (!p) return { p: 'This Pod is gone.' }; return { p: (ABOUT[p.app] || '') + ' A Pod is one sandbox (pause container holding the network namespace) plus its app containers, all sharing one IP.', dl: [['Namespace', APP[p.app].ns || 'shop'], ['Node', NODE[p.node].name], ['Pod IP', p.ip], ['Image', APP[p.app].img], ['Phase', { running: 'Running', sandbox: 'Pending (ContainerCreating)', crash: 'Running · liveness failing', ghost: 'Unknown (node unreachable)' }[p.phase]], ['Restarts', String(p.restarts)], ['Containers', 'pause (sandbox) + ' + p.app]] }; },
+  lb: () => ({ p: 'Cloud load balancer provisioned by the cloud-controller-manager for the ingress-nginx Service (<code>type: LoadBalancer</code>). It forwards to a NodePort on healthy nodes and knows nothing about Pods.', dl: [['External IP', '34.120.8.9'], ['Target', 'nodes :30443']] }),
+  you: () => ({ p: 'You. <code>kubectl</code> talks to the apiserver over HTTPS with credentials from <code>~/.kube/config</code>. Your browser reaches the app through the load balancer. With GitOps, you push to Git instead.', dl: [['Identity', 'CN=you, O=shop-devs'], ['Context', 'realm-prod / namespace shop']] }),
+  registry: () => ({ p: 'OCI image registry. containerd fetches an image\'s manifest, then each layer blob by content digest and verifies its sha256. A layer cached on a node is never pulled again.', dl: [['Protocol', 'OCI Distribution (HTTPS)'], ['Images', 'shop/web, shop/orders, shop/checkout']] }),
+  git: () => ({ p: 'The deploy repository. In GitOps it is the source of truth: Argo CD and Flux continuously reconcile the cluster toward whatever <code>main</code> says. Orange beads are commits.', dl: [['Repo', 'https://git.realm.io/shop/deploy.git'], ['Branch', 'main'], ['Webhook', 'argocd.realm.io/api/webhook']] }),
+  disks: () => ({ p: 'Cloud block storage. CSI drivers create, attach and detach these disks in response to PersistentVolumeClaims and VolumeAttachments. Disks outlive Pods.', dl: [['StorageClass', 'pd-ssd · WaitForFirstConsumer'], ['Driver', 'pd.csi.storage.gke.io']] }),
+};
+const PLAIN = {
+  api: 'In plain words: the front desk. Every request from anyone goes through here, and it is the only one allowed to touch the records.',
+  etcd: 'In plain words: the cluster\'s memory. Three copies of one small database that must agree before anything counts as saved.',
+  sched: 'In plain words: the seating host. It decides which machine each new Pod goes to, and nothing more.',
+  kcm: 'In plain words: the fixers. Each gear compares what you asked for with what exists and fixes any difference.',
+  node: 'In plain words: one machine (a VM or server) where your apps actually run.',
+  kubelet: 'In plain words: this machine\'s caretaker. It asks what should run here, makes it happen, and reports back.',
+  containerd: 'In plain words: the workshop. It downloads app images and starts the containers.',
+  proxy: 'In plain words: the traffic rules. They send calls for a Service name to one of its healthy Pods.',
+  vtep: 'In plain words: a tunnel. Messages between Pods on different machines are wrapped and sent through it.',
+  pod: 'In plain words: one running copy of an app, with its own IP address.',
+  lb: 'In plain words: the door from the internet into the cluster.',
+  you: 'In plain words: you, changing the cluster (kubectl or Git) or using the app (browser).',
+  registry: 'In plain words: the warehouse where app images are stored.',
+  git: 'In plain words: the written plan. GitOps tools make the cluster match whatever is here.',
+  disks: 'In plain words: hard drives in the cloud that keep data even when Pods are replaced.',
+};
+let selected = null;
+function select(key, fly) {
+  if (selected && C[selected] && C[selected].label) C[selected].label.classList.remove('sel');
+  selected = key; const c = C[key]; if (!c) return;
+  c.label && c.label.classList.add('sel');
+  const I = INFO[c.kind] ? INFO[c.kind](c) : { p: '' };
+  infoEl.innerHTML = `<h4>${esc(c.disp || c.name)}</h4><div class="sub">${esc(c.sub || c.kind)}</div>${PLAIN[c.kind] ? `<p class="plain">${PLAIN[c.kind]}</p>` : ''}<p>${I.p}</p>${I.dl ? '<dl>' + I.dl.map(([a, b]) => `<dt>${a}</dt><dd>${esc(b).replace(/\n/g, '<br>')}</dd>`).join('') + '</dl>' : ''}${I.ul ? '<ul>' + I.ul.map(x => `<li>${x}</li>`).join('') + '</ul>' : ''}<div class="btnrow"><button class="btn" id="flyBtn">Fly to</button><button class="btn" id="logBtn">Its packets</button></div>`;
+  $('#flyBtn').onclick = () => flyTo(key);
+  $('#logBtn').onclick = () => showLogFor(key);
+  showTab('info'); openDrawer('insp');
+  if (fly) flyTo(key);
+}
+function inspectPacket(rec) {
+  const last = rec.legs[rec.legs.length - 1];
+  infoEl.innerHTML = `<h4>Packet #${rec.id}</h4><div class="sub">${rec.t.toLocaleTimeString()} · ${rec.legs.length} leg${rec.legs.length > 1 ? 's' : ''} · ${rec.live ? 'in flight, leg ' + (rec.li + 1) : 'delivered'}${rec.ambient ? ' · ambient' : ''}</div>
+    <p>${esc(dispName(rec.from))} → ${esc(dispName(last.to))}</p>
+    ${rec.legs.map(l => `<div class="leg" style="--pc:${hex(PROTO[l.proto].c)}"><div class="h"><span class="chip" style="--pc:${hex(PROTO[l.proto].c)}">${l.proto}</span><b>${esc(l.label)}</b><span>→ ${esc(dispName(l.to))}</span></div><pre>${esc(l.payload || '')}</pre></div>`).join('')}
+    <p class="empty">${PROTO[rec.legs[0].proto].name}: ${PROTO[rec.legs[0].proto].desc}.</p>
+    ${rec.live ? '<div class="btnrow"><button class="btn pri" id="folBtn">Follow this packet</button></div>' : ''}`;
+  if (rec.live) $('#folBtn').onclick = () => { if (rec.live) { focusPacket = rec.live; setFollow(true); } };
+  showTab('info'); openDrawer('insp');
+}
+function showLogFor(key) {
+  showTab('log');
+  [...logEl.children].forEach((li, i) => { const r = logged[i]; li.hidden = !!key && !(r.from === key || r.legs.some(l => l.to === key)); });
+}
+function showTab(t) {
+  $('#insp').hidden = false;
+  document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  infoEl.hidden = t !== 'info'; logEl.hidden = t !== 'log';
+  if (t === 'log' && !logged.length) { logEl.innerHTML = '<li class="empty" style="display:block;cursor:default">Start a quest to record its packets here. Ambient packets aren\'t logged, but you can click them in the world.</li>'; }
+  else if (t === 'log') { const e = logEl.querySelector('.empty'); e && e.remove(); }
+}
+$('#xInsp').onclick = () => { $('#insp').hidden = true; closeDrawers(); };
+document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => { showTab(b.dataset.tab); if (b.dataset.tab === 'log') showLogFor(null); });
+function welcomeInfo() {
+  infoEl.innerHTML = `<h4>How to explore</h4><div class="sub">a live, simulated Kubernetes cluster</div>
+  <p>Every glowing orb is <b>one packet</b>: a request, watch event, Raft message, CRI call, DNS query or encapsulated VXLAN frame. Click one to read its headers and payload.</p>
+  <ul><li><b>Drag</b> to orbit, <b>scroll</b> to zoom, <b>right-drag</b> to pan.</li><li><b>Click</b> any building, Pod or label to learn what it does.</li><li>Pick a <b>quest</b> to follow one flow end-to-end, step by step.</li><li>Faint flowing threads are the long-lived connections: watch streams, the etcd link, VXLAN tunnels.</li></ul>
+  <p class="empty">Simulated in the browser with real Kubernetes v1.31 semantics. Names and IPs are examples.</p>`;
+}
+
+// ---------- UI wiring ----------
+$('#qlist').innerHTML = QUESTS.map((q, i) => `<button class="q" data-i="${i}"><i>${['★', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'][i]}</i><b>${q.t}</b><span>${q.s}</span></button>`).join('');
+document.querySelectorAll('.q').forEach(b => b.onclick = () => startQuest(+b.dataset.i));
+$('#legend').innerHTML = Object.entries(PROTO).map(([k, p]) => `<div class="lg" title="${esc(p.desc)}" style="--pc:${hex(p.c)}"><i></i><span>${p.name} <small>${p.el}</small></span></div>`).join('');
+function setPaused(v) { paused = v; $('#bPause').innerHTML = (v ? 'Resume' : 'Pause') + ' <kbd>Space</kbd>'; }
+function setFollow(v) { follow = v; $('#cFollow').checked = v; }
+$('#bPause').onclick = () => setPaused(!paused);
+nextBtn.onclick = () => { const r = nextRes; nextRes = null; if (r) return r(); const a = afterQuest; afterQuest = null; a && a(); };
+$('#cAuto').onchange = e => auto = e.target.checked;
+$('#sSpeed').onchange = e => speed = +e.target.value;
+$('#cFollow').onchange = e => setFollow(e.target.checked);
+$('#cAmb').onchange = e => ambOn = e.target.checked;
+$('#cLbl').onchange = e => showLabels = e.target.checked;
+$('#bHome').onclick = flyHome;
+$('#bLog').onclick = () => { showTab('log'); showLogFor(null); openDrawer('insp'); };
+function openDrawer(id) { if (innerWidth <= 860) { $('#quests').classList.toggle('open', id === 'quests'); $('#insp').classList.toggle('open', id === 'insp'); } }
+function closeDrawers() { $('#quests').classList.remove('open'); $('#insp').classList.remove('open'); }
+$('#tQ').onclick = () => $('#quests').classList.contains('open') ? closeDrawers() : openDrawer('quests');
+$('#tI').onclick = () => $('#insp').classList.contains('open') ? closeDrawers() : openDrawer('insp');
+addEventListener('keydown', e => {
+  if (e.target.tagName === 'SELECT' || e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); setPaused(!paused); }
+  else if (e.key === 'ArrowRight' || e.key === 'Enter') nextBtn.onclick();
+  else if (e.key === 'f' || e.key === 'F') setFollow(!follow);
+  else if (e.key === 'l' || e.key === 'L') { showLabels = !showLabels; $('#cLbl').checked = showLabels; }
+  else if (e.key === 'Escape') { stopQuest(); flyHome(); }
+});
+
+// picking
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+function pickAt(x, y) {
+  mouse.set(x / innerWidth * 2 - 1, -(y / innerHeight) * 2 + 1); ray.setFromCamera(mouse, camera);
+  for (const h of ray.intersectObjects(scene.children, true)) {
+    let o = h.object;
+    while (o) { if (o.userData.packet) return { packet: o.userData.packet }; if (o.userData.key && C[o.userData.key]) return { key: o.userData.key }; o = o.parent; }
+  }
+  return null;
+}
+let down = null;
+canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY }; controls.autoRotate = false; flight = null; });
+canvas.addEventListener('pointerup', e => {
+  if (!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return; down = null;
+  const h = pickAt(e.clientX, e.clientY);
+  if (h && h.packet) inspectPacket(h.packet); else if (h) select(h.key);
+});
+canvas.addEventListener('dblclick', e => { const h = pickAt(e.clientX, e.clientY); if (h && h.key) flyTo(h.key); });
+let hoverT = 0;
+canvas.addEventListener('pointermove', e => { if (e.buttons || performance.now() - hoverT < 60) return; hoverT = performance.now(); canvas.style.cursor = pickAt(e.clientX, e.clientY) ? 'pointer' : 'grab'; });
+canvas.addEventListener('wheel', () => { controls.autoRotate = false; flight = null; }, { passive: true });
+
+// ---------- main loop ----------
+let last = performance.now();
+const tmpC = new THREE.Color();
+function frame(now) {
+  requestAnimationFrame(frame);
+  const dt = Math.max(0, Math.min(50, now - last)); last = now;
+  const ds = paused ? 0 : dt * speed; simT += ds;
+  for (let i = waiters.length - 1; i >= 0; i--) if (simT >= waiters[i].t) { const w = waiters.splice(i, 1)[0]; w.res(); }
+  for (let i = tweens.length - 1; i >= 0; i--) { const t = tweens[i]; t.t = Math.min(1, t.t + ds / t.dur); t.fn(t.t); if (t.t >= 1) { tweens.splice(i, 1); t.done && t.done(); } }
+  updatePackets(ds); updateRoutes(ds); updateBursts(ds); ambientTick(ds);
+  const s = ds * .001;
+  for (const k in C) { const c = C[k]; if (c.pulse > 0) { c.pulse = Math.max(0, c.pulse - s * 1.6); c.glow.material.opacity = c.pulse * .9; c.glow.scale.setScalar(c.glowSize * (1 + (1 - c.pulse) * .7)); } }
+  gateRings.forEach(g => { g.flash = Math.max(0, g.flash - s * 1.5); g.m.material.color.copy(g.base).lerp(tmpC.setHex(0x9ffff0), g.flash); g.m.scale.setScalar(1 + g.flash * .25); g.m.rotation.z += ds * .0004; });
+  for (const n in GEARS) { const G = GEARS[n]; G.boost = Math.max(0, G.boost - s * .35); G.g.rotation.z += ds * G.base * (1 + G.boost * 14); }
+  scope.rotation.y += (scopeYaw - scope.rotation.y) * Math.min(1, dt * .004);
+  NODES.forEach(N => { N.rulesFlash = Math.max(0, (N.rulesFlash || 0) - s * 1.2); N.rules.material.opacity = N.rulesFlash * .8; N.lantern.material.opacity = .6 + .3 * Math.sin(now * .004 + N.pos.x); });
+  streams.forEach(st => { const u = st.m.material.uniforms; u.t.value += ds * .0012; if (st.a0 === undefined) st.a0 = u.a.value; u.a.value += ((spot ? st.a0 * .3 : st.a0) - u.a.value) * .05; });
+  wfMat.uniforms.t.value = now * .001;
+  if (!REDUCED) {
+    clouds.forEach((c, i) => { c.position.x += dt * .002 * (1 + i % 3); if (c.position.x > 460) c.position.x = -460; });
+    const pa = pGeo.attributes.position.array;
+    for (let i = 0; i < PN; i++) { pa[i * 3 + 1] += dt * .003; pa[i * 3] += Math.sin(now * .0005 + i) * .01; if (pa[i * 3 + 1] > 100) pa[i * 3 + 1] = -30; }
+    pGeo.attributes.position.needsUpdate = true;
+    bobbers.forEach(b => b.o.position.y = b.y + Math.sin(now * .001 + b.ph) * b.amp);
+    spinners.forEach(sp => { if (sp.axis === 'z') sp.o.rotation.z += dt * sp.s; else sp.o.rotation.y += dt * sp.s; });
+  }
+  updateFlight(dt); updateFollow();
+  controls.update();
+  sky.position.copy(camera.position);
+  renderer.render(scene, camera);
+  updateLabels();
+}
+resetWorld();
+welcomeInfo();
+dialogue('Skyrealm', 'Welcome, Traveler. Below you is a running Kubernetes cluster: a control plane in the sky, four worker nodes, and your shop\'s workloads. Every light moving between them is one real message. New here? Press <b>Continue</b> for a short tour that explains each piece in plain words.');
+stepEl.textContent = 'free roam';
+nextBtn.disabled = false; afterQuest = () => startQuest(0);
+requestAnimationFrame(frame);
+// self-check: every quest step names a speaker and has a runner
+QUESTS.forEach(q => q.steps.forEach((s, i) => console.assert(s.who && typeof s.run === 'function', `quest ${q.t} step ${i}`)));
+</script>
+
+</html>
