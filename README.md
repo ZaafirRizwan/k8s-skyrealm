@@ -17,7 +17,22 @@ It's a learning tool for anyone who has typed `kubectl apply` and wondered what 
 - **Read every packet.** Each message carries its protocol, sender, receiver and a realistic payload. Cross-node traffic shows its encapsulation: inner HTTP → outer VXLAN UDP 8472 → inner HTTP.
 - **See the data streams.** Routes are drawn before a packet travels, dashes flow toward the destination, the sender and receiver ripple, and an "In flight now" list names every live message.
 
-## Quests
+## Play mode: Packet Runner
+
+Switch to **Play** in the header and *become the data*. You're a courier who rides the data streams between components with a chase camera. At every stop you choose where the packet goes next. A right answer sends you riding there, with a short reason why. A wrong turn costs a heart and explains the mistake (e.g. *"only the apiserver may touch etcd"*).
+
+| # | Mission | Type |
+|---|---------|------|
+| 1 | Deliver the Deployment | Runner: `kubectl apply` all the way to a running Pod, with quiz gates on authn/RBAC, Raft quorum and CNI |
+| 2 | The Traveler's Request | Runner: load balancer → NodePort → iptables DNAT → ingress → VXLAN → Pod, and back via conntrack (avoid the Pod failing readiness) |
+| 3 | Gatekeeper | Mini-game: you *are* the apiserver. Allow or deny 12 requests using RBAC and Kyverno policy |
+| 4 | Scheduler Rush | Mini-game: you *are* the scheduler. Place 10 Pods by requests, taints and nodeSelectors, or leave them Pending |
+| 5 | Asking the Oracle | Runner: CoreDNS lookup and a ClusterIP nobody listens on |
+| 6 | GitOps Courier | Runner: git push → webhook → Argo CD repo-server → diff → sync |
+
+Between stops, steer with **A/D** to collect data shards, dodge lag clouds, and hold **W** to boost. Earn 1–3 stars per mission, climb the ranks from *Stray Packet* to *Cluster Archon*, and fill the **Codex** by discovering components. Progress is saved in your browser.
+
+## Quests (Explore mode)
 
 | # | Quest | What it teaches |
 |---|-------|-----------------|
