@@ -135,8 +135,73 @@ summary{cursor:pointer;font:700 12px var(--display);letter-spacing:.14em;text-tr
 #flow span.done{color:var(--ink);border-color:var(--line)}
 #flow span.now{background:var(--gold);color:var(--paper-ink);border-color:var(--gold-hi)}
 #flow i{font-style:normal;color:var(--gold);opacity:.6}
+.seg{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin-left:6px}
+.seg button{background:none;border:0;padding:6px 14px;cursor:pointer;font:700 12px var(--body);color:var(--ink-dim)}
+.seg button.on{background:var(--gold);color:var(--paper-ink)}
+#mrank{font-size:12px;color:var(--ink-dim);margin-bottom:10px;line-height:1.5}
+#mrank b{color:var(--gold-hi)}
+#mlist{display:grid;gap:8px}
+#mlist .tag{font:700 9.5px var(--mono);font-style:normal;color:var(--paper-ink);background:var(--gold);border-radius:4px;padding:1px 5px;margin-left:4px;vertical-align:2px}
+#mlist .st{color:var(--gold-hi);letter-spacing:.1em;font-size:13px}
+#mlist h4{margin:0 0 6px;font:700 12px var(--display);letter-spacing:.12em;color:var(--gold);text-transform:uppercase}
+#mlist ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.55}
+#mlist code,#gtxt code,#gfb code,.mcard code{font:600 11.5px var(--mono);color:var(--gold-hi)}
+#hud{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));right:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 32px);background:var(--navy);border:1px solid var(--line);border-radius:999px;padding:8px 18px;font-size:13px;color:var(--ink-dim);z-index:3}
+#hud #hTitle{font:700 13px var(--display);letter-spacing:.08em;color:var(--gold-hi)}
+#hHearts{color:#ff6b7f;font-size:16px;letter-spacing:2px}
+#hScore{color:var(--ink);font-variant-numeric:tabular-nums}
+#hCombo{color:var(--gold-hi);font-weight:800}
+#hCarry{display:flex;gap:6px;align-items:center;color:var(--ink);font-weight:700}
+#hCarry:empty,#hCombo:empty{display:none}
+#gbar{position:fixed;left:0;right:0;bottom:0;padding:40px 16px calc(14px + env(safe-area-inset-bottom,0px));background:linear-gradient(to bottom,rgba(10,12,22,0),rgba(10,12,22,.8) 30%,rgba(10,12,22,.93));pointer-events:none;z-index:2}
+#gbar .inner{max-width:860px;margin:0 auto;pointer-events:auto;text-align:center}
+#gtxt{margin:8px auto 12px;max-width:70ch;font-size:15.5px;line-height:1.55;color:#f6f1e7;text-wrap:pretty}
+#gopts{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.gopt{display:grid;grid-template-columns:auto 1fr;gap:1px 9px;align-items:center;text-align:left;min-width:150px;max-width:300px;flex:1 1 170px;background:rgba(255,255,255,.06);border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;cursor:pointer;color:var(--ink);transition:transform .12s,background .12s,border-color .12s}
+.gopt:hover:not(:disabled){background:rgba(242,220,168,.14);border-color:var(--gold-hi);transform:translateY(-2px)}
+.gopt kbd{grid-row:span 2;font-size:11px;color:var(--gold-hi);border-color:var(--gold);padding:2px 6px}
+.gopt b{font-size:13.5px}
+.gopt small{font-size:11px;color:var(--ink-dim);line-height:1.35}
+.gopt:disabled{opacity:.35;cursor:default}
+.gopt.wrong{border-color:var(--bad)}
+.gopt.right{border-color:#4fd18b;background:rgba(79,209,139,.16)}
+.gopt.allow{border-color:#4fd18b}.gopt.deny{border-color:#ff6b7f}
+.ghint{margin:0;font-size:12.5px;color:var(--ink-dim)}
+#gfb{margin:10px auto 0;max-width:70ch;min-height:1.4em;font-size:14px;line-height:1.5}
+#gfb.ok{color:#7ee2a8}#gfb.bad{color:#ff9a8a}
+.req{display:grid;gap:4px;max-width:520px;margin:0 auto;text-align:left;background:rgba(244,236,219,.06);border:1px solid var(--line);border-radius:12px;padding:10px 14px;position:relative}
+.req div{font-size:13.5px}.req span{display:inline-block;width:92px;color:var(--ink-dim);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+.req small{color:var(--ink-dim)}
+.timer{display:block;height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:6px;overflow:hidden}
+.timer i{display:block;height:100%;width:100%;background:var(--gold);transition:width .1s linear}
+#toast{position:fixed;top:calc(74px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);max-width:min(460px,calc(100% - 32px));background:var(--navy);border:1px solid var(--line);border-radius:12px;padding:9px 14px;font-size:13px;line-height:1.45;text-align:center;z-index:4;animation:pop .2s ease-out}
+#toast.gold{border-color:var(--gold-hi);box-shadow:0 0 18px rgba(242,220,168,.3)}
+#toast.bad{border-color:var(--bad)}
+#flash{position:fixed;inset:0;pointer-events:none;background:radial-gradient(transparent 55%,rgba(212,85,63,.55));opacity:0;z-index:3}
+#flash.go{animation:flash .5s ease-out}
+@keyframes flash{20%{opacity:1}100%{opacity:0}}
+#modal{position:fixed;inset:0;display:grid;place-items:center;background:rgba(8,10,20,.55);z-index:5;padding:16px}
+.mcard{position:relative;max-width:560px;width:100%;max-height:calc(100% - 32px);overflow:auto;padding:22px 24px}
+.mcard h3{margin:0;font:700 22px var(--display);color:var(--gold-hi);letter-spacing:.06em;text-align:center}
+.mcard h4{margin:14px 0 6px;font:700 12px var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+.mcard ul{margin:0;padding-left:18px;font-size:13px;line-height:1.55}
+.mcard .miss li{color:#ffb4a8}
+.mcard .btnrow{justify-content:center;margin-top:16px}
+.stars{text-align:center;font-size:34px;color:var(--gold-hi);letter-spacing:6px;margin:6px 0}
+.mdim{text-align:center;color:var(--ink-dim);font-size:13px;margin:4px 0}
+.codex{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:12px}
+.codex div{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11.5px;line-height:1.4;min-width:0}
+.codex b{display:block;color:var(--gold-hi);font-size:12.5px;margin-bottom:2px}
+.codex .locked{opacity:.45}
+#steer{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));display:none;gap:10px;z-index:3}
+#steer button{background:var(--navy);border:1px solid var(--line);border-radius:999px;padding:12px 20px;font:700 15px var(--body);color:var(--gold-hi);touch-action:none}
+@media (pointer:coarse){#steer:not([hidden]){display:flex}}
 @media (max-width:860px){
   #flow,#transit{display:none!important}
+  #hud{top:calc(64px + env(safe-area-inset-top,0px));left:16px;right:16px;max-width:none;font-size:12px;gap:8px;padding:6px 12px}
+  .seg button{padding:5px 10px}
+  #gtxt{font-size:14px}
+  .gopt{min-width:130px}
   .mob{display:inline-block}
   #brand{right:16px;padding:8px 10px}
   #brand h1{font-size:14px}
@@ -157,14 +222,16 @@ summary{cursor:pointer;font:700 12px var(--display);letter-spacing:.14em;text-tr
 <header id="brand" class="panel">
   <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><polygon points="17,2 29,8 32,21 24,31 10,31 2,21 5,8" fill="none" stroke="#d3bc8e" stroke-width="1.6"/><circle cx="17" cy="17" r="4" fill="none" stroke="#f2dca8" stroke-width="1.6"/><g stroke="#f2dca8" stroke-width="1.4"><line x1="17" y1="13" x2="17" y2="6"/><line x1="20.1" y1="14.5" x2="25.6" y2="10.1"/><line x1="20.9" y1="17.9" x2="27.7" y2="19.4"/><line x1="18.7" y1="20.6" x2="21.8" y2="26.9"/><line x1="15.3" y1="20.6" x2="12.2" y2="26.9"/><line x1="13.1" y1="17.9" x2="6.3" y2="19.4"/><line x1="13.9" y1="14.5" x2="8.4" y2="10.1"/></g></svg>
   <div><h1>Kubernetes Skyrealm</h1><p>cluster <code>realm-prod</code> · v1.31 · 1 control plane · 4 nodes</p></div>
+  <div class="seg" role="group" aria-label="Mode"><button id="mExplore" class="on">Explore</button><button id="mPlay">Play</button></div>
   <span class="sp"></span>
   <button id="tQ" class="mob btn">Quests</button><button id="tI" class="mob btn">Inspect</button>
 </header>
 
 <aside id="quests" class="panel" aria-label="Quests">
-  <h2>Quests</h2>
+  <h2 id="qhead">Quests</h2>
   <div id="qlist"></div>
-  <details><summary>What the colours mean</summary><div id="legend"></div></details>
+  <div id="mwrap" hidden><div id="mrank"></div><div id="mlist"></div></div>
+  <details id="legendBox"><summary>What the colours mean</summary><div id="legend"></div></details>
 </aside>
 
 <aside id="insp" class="panel" aria-label="Inspector" hidden>
@@ -173,6 +240,19 @@ summary{cursor:pointer;font:700 12px var(--display);letter-spacing:.14em;text-tr
   <ol id="log" hidden></ol>
 </aside>
 
+<div id="hud" hidden><b id="hTitle"></b><span id="hHearts" aria-label="hearts"></span><span>score <b id="hScore">0</b></span><span id="hCombo"></span><span id="hCarry"></span></div>
+<div id="toast" hidden></div>
+<div id="flash"></div>
+<div id="modal" hidden><div class="mcard panel" id="mcard"></div></div>
+<div id="steer" hidden><button data-d="-1" aria-label="Steer left">◀</button><button id="bBoost" aria-label="Boost">Boost</button><button data-d="1" aria-label="Steer right">▶</button></div>
+<section id="gbar" hidden aria-live="polite">
+  <div class="inner">
+    <div class="who" id="gwho"></div>
+    <div id="gtxt"></div>
+    <div id="gopts"></div>
+    <p id="gfb"></p>
+  </div>
+</section>
 <section id="dlg" aria-live="polite">
   <div class="inner">
     <div id="transit" hidden></div>
@@ -1572,6 +1652,7 @@ function frame(now) {
     bobbers.forEach(b => b.o.position.y = b.y + Math.sin(now * .001 + b.ph) * b.amp);
     spinners.forEach(sp => { if (sp.axis === 'z') sp.o.rotation.z += dt * sp.s; else sp.o.rotation.y += dt * sp.s; });
   }
+  if (G.active) gameUpdate(dt);
   updateFlight(dt); updateFollow();
   controls.update();
   sky.position.copy(camera.position);
@@ -1586,6 +1667,625 @@ nextBtn.disabled = false; afterQuest = () => startQuest(0);
 requestAnimationFrame(frame);
 // self-check: every quest step names a speaker and has a runner
 QUESTS.forEach(q => q.steps.forEach((s, i) => console.assert(s.who && typeof s.run === 'function', `quest ${q.t} step ${i}`)));
+
+// ================= PLAY MODE: Packet Runner =================
+const G = { active: false, ts: 1, kind: null, level: -1, run: null, cur: null, hearts: 3, score: 0, combo: 0, mistakes: [], carry: null };
+const SAVE_KEY = 'skyrealm-save-v1';
+let save = { stars: {}, best: {}, codex: [] };
+try { const raw = localStorage.getItem(SAVE_KEY); if (raw) save = Object.assign(save, JSON.parse(raw)); } catch (e) {}
+function persist() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
+
+// ---------- the courier avatar ----------
+const player = new THREE.Group(); player.visible = false; scene.add(player);
+const avatar = new THREE.Group(); player.add(avatar);
+M(new THREE.CylinderGeometry(.42, .72, 1.5, 10), 0xf4ecdb, avatar, 0, -.2, 0);
+M(new THREE.SphereGeometry(.48, 14, 10), 0xffe3c8, avatar, 0, .95, 0);
+M(new THREE.ConeGeometry(.62, .8, 10), 0xd3bc8e, avatar, 0, 1.55, 0);
+const capeMat = toon(0x5fe0c5, { side: THREE.DoubleSide });
+const cape = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 1.9, 1, 6), capeMat); cape.position.set(0, .1, -.55); avatar.add(cape);
+const envMat = basic(0xffffff);
+M(new THREE.BoxGeometry(1.05, .72, .14), 0xffffff, avatar, 0, .1, .78, { mat: envMat });
+const pGlow = glow(0x5fe0c5, 7, .85); player.add(pGlow);
+player.traverse(o => { o.raycast = () => {}; });
+const pTrail = [];
+for (let i = 0; i < 12; i++) { const s = glow(0x5fe0c5, 2.6 * (1 - i / 13), .5 * (1 - i / 12)); s.raycast = () => {}; s.visible = false; scene.add(s); pTrail.push(s); }
+const pHist = [];
+function tintPlayer(c) { capeMat.color.setHex(c); pGlow.material.color.setHex(c); envMat.color.setHex(c).lerp(new THREE.Color(0xffffff), .55); pTrail.forEach(s => s.material.color.setHex(c)); }
+
+// ---------- riding a stream ----------
+const UP = new V(0, 1, 0);
+const RS = { ride: null, lane: 0, laneX: 0, boost: false, lag: 0 };
+const SHARD_GEO = new THREE.OctahedronGeometry(.42, 0);
+function frameAt(cv, t) {
+  const p = cv.getPoint(t), T = cv.getTangent(t).normalize();
+  const S = new V().crossVectors(T, UP); if (S.lengthSq() < 1e-4) S.set(1, 0, 0); S.normalize();
+  return { p, T, S, U: new V().crossVectors(S, T).normalize() };
+}
+function ride(to, proto, label) {
+  return new Promise(res => {
+    const a = anchor(G.cur), b = anchor(to); if (!a || !b) return res();
+    const cv = curve(a, b), len = Math.max(4, cv.getLength()), col = PROTO[proto].c;
+    const route = new THREE.Mesh(new THREE.TubeGeometry(cv, 80, .55, 8, false), new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false, vertexShader: ROUTE_V, fragmentShader: ROUTE_F,
+      uniforms: { c: { value: new THREE.Color(col) }, prog: { value: 0 }, t: { value: 0 }, rep: { value: len / 3.5 }, fade: { value: 1 } } }));
+    route.raycast = () => {}; scene.add(route);
+    const items = [], n = Math.floor(len / 6);
+    for (let i = 1; i <= n; i++) {
+      const t = i / (n + 1); if (t < .08 || t > .94) continue;
+      const lane = Math.floor(Math.random() * 3) - 1, f = frameAt(cv, t), hazard = len > 25 && i % 5 === 3;
+      let m;
+      if (hazard) {
+        m = new THREE.Group();
+        for (let j = 0; j < 3; j++) { const s = new THREE.Mesh(CLOUD_GEO, toon(0x4a3a6a)); s.scale.setScalar(.7 + j * .15); s.position.set((j - 1) * .6, (j % 2) * .3, 0); m.add(s); }
+        m.add(glow(0xff4d6d, 3.5, .6));
+      } else { m = new THREE.Mesh(SHARD_GEO, basic(col)); m.add(glow(col, 2.2, .8)); }
+      m.traverse(o => { o.raycast = () => {}; });
+      m.position.copy(f.p).addScaledVector(f.S, lane * 1.8).addScaledVector(f.U, .7);
+      scene.add(m); items.push({ m, t, lane, hazard, taken: false });
+    }
+    RS.ride = { cv, len, t: 0, to, col, route, items, res };
+    spot = new Set([to]);
+    RS.lane = 0; RS.laneX = 0; tintPlayer(col); player.visible = true; controls.enabled = false; flight = null;
+    $('#steer').hidden = false;
+    hud();
+  });
+}
+function cleanupRide() {
+  const r = RS.ride; if (!r) return; RS.ride = null;
+  r.items.forEach(it => scene.remove(it.m)); scene.remove(r.route); spot = null;
+  controls.enabled = true; $('#steer').hidden = true;
+}
+function updateRide(dt) {
+  const r = RS.ride; if (!r) return;
+  RS.lag = Math.max(0, RS.lag - dt);
+  const sp = (RS.boost ? 30 : 17) * (RS.lag ? .4 : 1);
+  r.t = Math.min(1, r.t + dt / 1000 * sp / r.len);
+  RS.laneX += (RS.lane * 1.8 - RS.laneX) * Math.min(1, dt * .012);
+  const f = frameAt(r.cv, r.t), now = performance.now();
+  const pos = f.p.clone().addScaledVector(f.S, RS.laneX).addScaledVector(f.U, .7 + Math.sin(now * .006) * .12);
+  player.position.copy(pos); player.lookAt(pos.clone().add(f.T));
+  avatar.rotation.z = -(RS.lane * 1.8 - RS.laneX) * .25;
+  cape.rotation.x = .3 + Math.sin(now * .012) * .12 + (RS.boost ? .5 : 0);
+  r.route.material.uniforms.prog.value = r.t; r.route.material.uniforms.t.value += dt * .002;
+  for (const it of r.items) {
+    if (it.taken) continue;
+    it.m.rotation.y += dt * .004;
+    if (Math.abs(it.t - r.t) * r.len < 1.1 && Math.abs(it.lane * 1.8 - RS.laneX) < 1.1) {
+      it.taken = true; scene.remove(it.m);
+      if (it.hazard) { RS.lag = 1200; G.combo = 0; G.score = Math.max(0, G.score - 25); toast('Lag spike! Congestion slows packets down.', 'bad'); flashScreen(); }
+      else { G.combo++; G.score += 10 * (1 + Math.floor(G.combo / 8)); burst(it.m.position, r.col, true); }
+      hud();
+    }
+  }
+  const k = 1 - Math.exp(-dt * .005);
+  camera.position.lerp(pos.clone().addScaledVector(f.T, -16).addScaledVector(f.U, 5).add(new V(0, 3.5, 0)), k);
+  controls.target.lerp(pos.clone().addScaledVector(f.T, 6), k);
+  if (r.t >= 1) {
+    RS.ride = null; $('#steer').hidden = true;
+    r.items.forEach(it => scene.remove(it.m)); fadingRoutes.push({ m: r.route, life: 1 });
+    G.cur = r.to; spot = null; pulse(r.to, r.col); burst(anchor(r.to), r.col, false); visit(r.to);
+    controls.enabled = true; flyTo(r.to, 30);
+    r.res();
+  }
+}
+function gameUpdate(rawDt) {
+  const dt = rawDt * G.ts;
+  updateRide(dt);
+  if (!player.visible) { pTrail.forEach(s => s.visible = false); return; }
+  if (!RS.ride && G.cur && anchor(G.cur)) {
+    const a = anchor(G.cur).add(new V(0, 3.2 + Math.sin(performance.now() * .003) * .3, 0));
+    player.position.lerp(a, Math.min(1, dt * .006)); avatar.rotation.z *= .9; player.rotation.y += dt * .001;
+  }
+  pHist.unshift(player.position.clone()); if (pHist.length > 26) pHist.pop();
+  pTrail.forEach((s, i) => { s.visible = true; s.position.copy(pHist[i * 2 + 1] || player.position); });
+}
+
+// ---------- codex ----------
+const CODEX = [['you', 'You'], ['lb', 'Cloud Load Balancer'], ['api', 'kube-apiserver'], ['etcd', 'etcd'], ['kcm', 'kube-controller-manager'], ['sched', 'kube-scheduler'], ['node', 'Worker node'], ['kubelet', 'kubelet'], ['containerd', 'containerd'], ['proxy', 'kube-proxy'], ['vtep', 'flannel tunnel'], ['pod', 'Pod'], ['registry', 'Image registry'], ['git', 'Git repository'], ['disks', 'Cloud disks']];
+function visit(key) {
+  const c = C[key]; if (!c || !c.kind || save.codex.includes(c.kind)) return;
+  save.codex.push(c.kind); persist(); renderMissions();
+  const e = CODEX.find(x => x[0] === c.kind);
+  toast(`<b>Codex unlocked: ${esc(e ? e[1] : c.name)}</b><br>${PLAIN[c.kind].replace(/^In plain words: /, '')}`, 'gold');
+}
+function showCodex() {
+  modal(`<h3>Codex</h3><p class="mdim">${save.codex.length} / ${CODEX.length} entries. Reach a component during a mission to unlock it.</p>
+    <div class="codex">${CODEX.map(([k, n]) => save.codex.includes(k)
+      ? `<div><b>${esc(n)}</b><span>${PLAIN[k].replace(/^In plain words: /, '')}</span></div>`
+      : `<div class="locked"><b>???</b><span>Not discovered yet</span></div>`).join('')}</div>
+    <div class="btnrow"><button class="btn pri" id="mClose">Close</button></div>`);
+  $('#mClose').onclick = hideModal;
+}
+
+// ---------- HUD, prompt bar, toasts ----------
+const RANKS = [[0, 'Stray Packet'], [3, 'Packet Apprentice'], [6, 'Stream Rider'], [9, 'Node Warden'], [12, 'Control Plane Adept'], [16, 'Cluster Archon']];
+const totalStars = () => Object.values(save.stars).reduce((a, b) => a + b, 0);
+const rankOf = s => RANKS.filter(r => s >= r[0]).pop()[1];
+function hud() {
+  $('#hHearts').textContent = '♥'.repeat(Math.max(0, G.hearts)) + '♡'.repeat(Math.max(0, 3 - G.hearts));
+  $('#hScore').textContent = G.score;
+  $('#hCombo').textContent = G.combo > 1 ? `×${G.combo} combo` : '';
+  const c = G.carry;
+  $('#hCarry').innerHTML = c ? `<span class="chip" style="--pc:${hex(PROTO[c[0]].c)}">${c[0]}</span> ${esc(c[1])}` : '';
+}
+let gOpts = [], gCb = null, gLocked = false;
+function gbar(who, html, opts, cb) {
+  $('#gwho').textContent = who; $('#gtxt').innerHTML = html; gOpts = opts; gCb = cb; gLocked = false;
+  $('#gopts').innerHTML = opts.map((o, j) => `<button class="gopt${o.cls ? ' ' + o.cls : ''}" data-j="${j}"><kbd>${o.kbd || j + 1}</kbd><b>${esc(o.label)}</b>${o.hint ? `<small>${esc(o.hint)}</small>` : ''}</button>`).join('');
+  $('#gopts').querySelectorAll('.gopt').forEach(b => b.onclick = () => pickOpt(+b.dataset.j));
+}
+function feedback(html, cls) { const f = $('#gfb'); f.innerHTML = html; f.className = cls || ''; }
+function pickOpt(j) { if (gLocked || !gCb || j < 0 || j >= gOpts.length) return; const b = $('#gopts').children[j]; if (!b || b.disabled) return; gCb(j, b); }
+let toastT = 0;
+function toast(html, cls = '') { const t = $('#toast'); t.innerHTML = html; t.className = cls; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 3600); }
+function flashScreen() { const f = $('#flash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
+function modal(html) { $('#mcard').innerHTML = html; $('#modal').hidden = false; }
+function hideModal() { $('#modal').hidden = true; }
+const realWait = ms => new Promise(r => setTimeout(r, ms));
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+
+// ---------- runner steps ----------
+function askStep(st, run) {
+  return new Promise(res => {
+    const move = st.c === 'choose';
+    const order = shuffle(st.opts.map((_, i) => i));
+    if (move) spot = new Set([G.cur, ...st.opts.map(o => o[0])]);
+    feedback('');
+    gbar(move ? `At ${nm(G.cur)}` : 'Quick check', st.prompt,
+      order.map(i => ({ label: move ? nm(st.opts[i][0]) : st.opts[i][0], hint: move && C[st.opts[i][0]] ? C[st.opts[i][0]].sub : '' })),
+      async (j, btn) => {
+        if (run.dead) return;
+        const o = st.opts[order[j]];
+        if (o[1]) {
+          gLocked = true; btn.classList.add('right'); G.score += 50; G.combo++; hud();
+          feedback('✓ ' + o[2], 'ok');
+          if (move) { $('#gwho').textContent = `Riding to ${nm(o[0])}`; $('#gopts').innerHTML = '<p class="ghint">Steer <kbd>A</kbd>/<kbd>D</kbd> to grab shards and dodge lag clouds · hold <kbd>W</kbd> to boost</p>'; await ride(o[0], G.carry[0], G.carry[1]); }
+          else await realWait(1400);
+          res(true);
+        } else {
+          btn.disabled = true; btn.classList.add('wrong');
+          G.hearts--; G.combo = 0; G.mistakes.push({ q: st.prompt, why: o[2] });
+          feedback('✗ ' + o[2], 'bad'); flashScreen(); hud();
+          if (G.hearts <= 0) { gLocked = true; res(false); }
+        }
+      });
+  });
+}
+function sayStep(who, html, run) {
+  return new Promise(res => { feedback(''); gbar(who, html, [{ label: 'Continue', kbd: '↵' }], () => { if (!run.dead) { gLocked = true; res(); } }); });
+}
+async function runLevel(i) {
+  const L = LEVELS[i];
+  if (G.run) G.run.dead = true;
+  cleanupRide(); hideModal(); stopQuest(); resetWorld(); clearCallouts();
+  const run = G.run = { dead: false };
+  Object.assign(G, { level: i, kind: L.kind, hearts: 3, score: 0, combo: 0, mistakes: [], carry: null, cur: null });
+  spot = null; $('#hud').hidden = false; $('#hTitle').textContent = L.t; hud(); renderMissions(); closeDrawers();
+  if (L.setup) L.setup();
+  if (L.kind === 'gate') return runGate(run);
+  if (L.kind === 'rush') return runRush(run);
+  G.cur = L.start; visit(L.start);
+  player.visible = true; player.position.copy(anchor(G.cur)).add(new V(0, 3, 0)); flyTo(G.cur, 30);
+  for (const st of L.steps) {
+    if (run.dead) return;
+    if (st.carry) { G.carry = st.carry; tintPlayer(PROTO[st.carry[0]].c); hud(); }
+    if (st.c === 'say') await sayStep(st.who || L.t, st.text, run);
+    else if (st.c === 'ride') {
+      G.carry = [st.proto, st.label]; hud();
+      gbar(`Riding to ${nm(st.to)}`, st.text || `Carrying <b>${esc(st.label)}</b> back along the stream.`, [], null);
+      $('#gopts').innerHTML = '<p class="ghint">Steer <kbd>A</kbd>/<kbd>D</kbd> · boost <kbd>W</kbd></p>';
+      await ride(st.to, st.proto, st.label);
+    } else if (st.c === 'do') st.fn();
+    else if (!(await askStep(st, run))) { if (!run.dead) endLevel(false); return; }
+  }
+  if (!run.dead) endLevel(true);
+}
+function endLevel(won) {
+  const L = LEVELS[G.level], i = G.level;
+  cleanupRide(); spot = null;
+  const stars = won ? (G.mistakes.length === 0 ? 3 : G.mistakes.length <= 2 ? 2 : 1) : 0;
+  if (won) { save.stars[i] = Math.max(save.stars[i] || 0, stars); save.best[i] = Math.max(save.best[i] || 0, G.score); persist(); }
+  renderMissions();
+  const next = i + 1 < LEVELS.length ? i + 1 : null;
+  modal(`<h3>${won ? 'Mission complete' : 'Out of hearts'}</h3>
+    <div class="stars">${won ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '☆☆☆'}</div>
+    <p class="mdim">${esc(L.t)} · score <b>${G.score}</b>${save.best[i] ? ` · best ${save.best[i]}` : ''} · rank <b>${rankOf(totalStars())}</b></p>
+    <h4>What you learned</h4><ul>${L.learn.map(x => `<li>${x}</li>`).join('')}</ul>
+    ${G.mistakes.length ? `<h4>Review your mistakes</h4><ul class="miss">${G.mistakes.map(m => `<li>${m.why}</li>`).join('')}</ul>` : ''}
+    <div class="btnrow"><button class="btn" id="mRetry">${won ? 'Play again' : 'Try again'}</button>${won && next !== null ? `<button class="btn pri" id="mNext">Next: ${esc(LEVELS[next].t)}</button>` : ''}<button class="btn" id="mList">Missions</button></div>`);
+  $('#mRetry').onclick = () => runLevel(i);
+  if ($('#mNext')) $('#mNext').onclick = () => runLevel(next);
+  $('#mList').onclick = () => { hideModal(); playLobby(); };
+}
+
+// ---------- mini-game: Gatekeeper ----------
+const GATE_RULES = `<h4>Rules you enforce</h4><ul>
+<li><b>Authentication</b>: reject requests without a valid certificate or token.</li>
+<li><b>RBAC</b>: group <code>shop-devs</code> may <code>get list create update</code> pods, deployments and services in namespace <code>shop</code>. No <code>delete</code>. No other namespaces.</li>
+<li><b>RBAC</b>: ServiceAccount <code>argocd-application-controller</code> may do anything in <code>shop</code>.</li>
+<li><b>Admission policy</b> (Kyverno): no <code>:latest</code> image tags, and every container must set resource <code>requests</code>. Nobody bypasses admission.</li></ul>`;
+const GATE_REQS = [
+  { who: 'alice', grp: 'shop-devs', act: 'create deployments', ns: 'shop', img: 'web:2.4.0 · requests set', cred: 'client cert valid', ok: true, why: 'Valid identity, RBAC allows create in shop, and the image is pinned with requests set.' },
+  { who: 'alice', grp: 'shop-devs', act: 'delete pods', ns: 'shop', img: '—', cred: 'client cert valid', ok: false, gate: 1, why: 'Authorization: shop-devs were never granted delete.' },
+  { who: 'bob', grp: 'shop-devs', act: 'create pods', ns: 'shop', img: 'nginx:latest · requests set', cred: 'token valid', ok: false, gate: 2, why: 'Admission: <code>:latest</code> is a mutable tag, so the policy rejects it.' },
+  { who: '(anonymous)', grp: '—', act: 'get pods', ns: 'shop', img: '—', cred: 'no credentials', ok: false, gate: 0, why: 'Authentication: no valid identity, so the request stops at the first gate.' },
+  { who: 'carol', grp: 'shop-devs', act: 'get services', ns: 'shop', img: '—', cred: 'token valid', ok: true, why: 'Reading services in shop is granted, and admission policies apply to Pods, not reads.' },
+  { who: 'alice', grp: 'shop-devs', act: 'create deployments', ns: 'kube-system', img: 'web:2.4.0 · requests set', cred: 'client cert valid', ok: false, gate: 1, why: 'Authorization: the RoleBinding only covers namespace shop.' },
+  { who: 'system:serviceaccount:argocd:argocd-application-controller', grp: 'serviceaccounts', act: 'update deployments', ns: 'shop', img: 'web:2.4.1 · requests set', cred: 'SA token valid', ok: true, why: 'Argo CD\'s ServiceAccount has rights in shop, and the change passes policy.' },
+  { who: 'bob', grp: 'shop-devs', act: 'create pods', ns: 'shop', img: 'orders:3.0.1 · no requests', cred: 'token valid', ok: false, gate: 2, why: 'Admission: the container sets no resource requests.' },
+  { who: 'dave', grp: 'interns', act: 'list pods', ns: 'shop', img: '—', cred: 'token valid', ok: false, gate: 1, why: 'Authorization: the interns group has no RoleBinding at all.' },
+  { who: 'carol', grp: 'shop-devs', act: 'update services', ns: 'shop', img: '—', cred: 'token valid', ok: true, why: 'Update on services in shop is granted.' },
+  { who: 'system:serviceaccount:argocd:argocd-application-controller', grp: 'serviceaccounts', act: 'create deployments', ns: 'shop', img: 'checkout:latest · requests set', cred: 'SA token valid', ok: false, gate: 2, why: 'Admission: even Argo CD can\'t bypass policy. <code>:latest</code> is rejected.' },
+  { who: 'alice', grp: 'shop-devs', act: 'create pods', ns: 'shop', img: 'web:2.4.0 · requests set', cred: 'token expired 2 h ago', ok: false, gate: 0, why: 'Authentication: an expired token is no identity at all.' },
+];
+async function runGate(run) {
+  G.cur = 'api'; visit('api'); player.visible = false; flyTo('api', 80);
+  $('#mlist').innerHTML = GATE_RULES; $('#mrank').innerHTML = '<b>Gatekeeper</b> · read the rules, then judge each request';
+  $('#quests').hidden = false;
+  for (const [n, q] of GATE_REQS.entries()) {
+    if (run.dead) return;
+    launch({ from: 'you', legs: [{ to: 'api', proto: 'REST', label: q.act, payload: `${q.act.split(' ')[0].toUpperCase()} /…/namespaces/${q.ns}/${q.act.split(' ')[1]}\nUser: ${q.who}\nGroups: ${q.grp}\nCredential: ${q.cred}\nImage: ${q.img}` }] });
+    const t0 = performance.now(), LIMIT = 15000;
+    const verdict = await new Promise(res => {
+      feedback('');
+      gbar(`Request ${n + 1} of ${GATE_REQS.length}`, `<div class="req">
+        <div><span>User</span><b>${esc(q.who)}</b> <small>groups: ${esc(q.grp)}</small></div>
+        <div><span>Action</span><b>${esc(q.act)}</b> in <b>${esc(q.ns)}</b></div>
+        <div><span>Image</span><b>${esc(q.img)}</b></div>
+        <div><span>Credential</span><b>${esc(q.cred)}</b></div>
+        <i class="timer"><i id="gTimer"></i></i></div>`,
+        [{ label: 'Deny', kbd: 'A', cls: 'deny' }, { label: 'Allow', kbd: 'D', cls: 'allow' }], j => { gLocked = true; clearInterval(iv); res(j === 1 ? 'allow' : 'deny'); });
+      const iv = setInterval(() => {
+        const left = 1 - (performance.now() - t0) / LIMIT, bar = $('#gTimer');
+        if (bar) bar.style.width = Math.max(0, left * 100) + '%';
+        if (run.dead) { clearInterval(iv); res('dead'); }
+        else if (left <= 0) { clearInterval(iv); gLocked = true; res('timeout'); }
+      }, 100);
+    });
+    if (run.dead || verdict === 'dead') return;
+    const right = verdict !== 'timeout' && (verdict === 'allow') === q.ok;
+    if (q.gate !== undefined) flashGate(q.gate);
+    if (verdict === 'allow') launch({ from: 'api', legs: [{ to: 'etcd0', proto: 'GRPC', label: 'stored', payload: 'Txn Put (request was allowed)' }] });
+    else launch({ from: 'api', legs: [{ to: 'you', proto: 'HOOK', label: q.gate === 0 ? '401 Unauthorized' : q.gate === 1 ? '403 Forbidden' : '400 denied by policy', payload: 'Request rejected before reaching etcd' }] });
+    if (right) { G.combo++; G.score += 100 + Math.round(Math.max(0, 1 - (performance.now() - t0) / LIMIT) * 50); feedback('✓ ' + q.why, 'ok'); }
+    else {
+      G.hearts--; G.combo = 0; G.mistakes.push({ q: q.act, why: q.why }); flashScreen();
+      feedback(`✗ ${verdict === 'timeout' ? 'Too slow: the client timed out. ' : `Should have been <b>${q.ok ? 'allowed' : 'denied'}</b>. `}${q.why}`, 'bad');
+    }
+    hud();
+    if (G.hearts <= 0) return endLevel(false);
+    await realWait(right ? 2200 : 3800);
+  }
+  if (!run.dead) endLevel(true);
+}
+
+// ---------- mini-game: Scheduler Rush ----------
+const RUSH = [
+  { n: 'web-7f5c8-a1x', cpu: 500, mem: 512 },
+  { n: 'orders-84bd6-b2y', cpu: 700, mem: 1024 },
+  { n: 'trainer-0', cpu: 1000, mem: 2048, sel: { gpu: 'true' }, tol: ['gpu'] },
+  { n: 'argocd-repo-server-c3z', cpu: 300, mem: 512, sel: { pool: 'platform' }, tol: ['pool'] },
+  { n: 'web-7f5c8-d4w', cpu: 600, mem: 512 },
+  { n: 'redis-cache-0', cpu: 400, mem: 1536 },
+  { n: 'batch-report-e5v', cpu: 900, mem: 1024 },
+  { n: 'web-7f5c8-f6u', cpu: 250, mem: 256 },
+  { n: 'search-indexer-g7t', cpu: 1500, mem: 2048 },
+  { n: 'log-agent-h8s', cpu: 200, mem: 256, tol: ['gpu', 'pool'] },
+];
+const RUSH_NODES = () => ({
+  n1: { cpu: 2000, used: 800, mem: 4096, mused: 1024, labels: { zone: 'a' }, taint: null },
+  n2: { cpu: 2000, used: 600, mem: 4096, mused: 1536, labels: { zone: 'b' }, taint: null },
+  n3: { cpu: 2000, used: 300, mem: 8192, mused: 1024, labels: { gpu: 'true' }, taint: 'gpu' },
+  n4: { cpu: 1500, used: 900, mem: 4096, mused: 2048, labels: { pool: 'platform' }, taint: 'pool' },
+});
+const TAINT_TXT = { gpu: 'gpu=true:NoSchedule', pool: 'pool=platform:NoSchedule' };
+function whyNot(p, k, N) {
+  const n = N[k], name = NODE[k].name;
+  if (n.taint && !(p.tol || []).includes(n.taint)) return `${name} has taint <code>${TAINT_TXT[n.taint]}</code> and this Pod doesn't tolerate it.`;
+  for (const [a, b] of Object.entries(p.sel || {})) if (n.labels[a] !== b) return `nodeSelector <code>${a}=${b}</code> doesn't match ${name}.`;
+  if (p.cpu > n.cpu - n.used) return `${name} has only ${n.cpu - n.used}m CPU free; the Pod requests ${p.cpu}m.`;
+  if (p.mem > n.mem - n.mused) return `${name} has only ${n.mem - n.mused}Mi memory free; the Pod requests ${p.mem}Mi.`;
+  return null;
+}
+async function runRush(run) {
+  G.cur = 'sched'; visit('sched'); player.visible = false; flyHome();
+  const N = RUSH_NODES();
+  $('#mlist').innerHTML = `<h4>How the scheduler decides</h4><ul><li><b>Filter</b>: the Pod's CPU and memory requests must fit, it must tolerate the node's taints, and its nodeSelector must match the node's labels.</li><li><b>Score</b>: among nodes that pass, prefer the one with the most room left (LeastAllocated).</li><li>If <b>no</b> node passes, the Pod stays <b>Pending</b> until something frees up.</li></ul>`;
+  $('#mrank').innerHTML = '<b>Scheduler Rush</b> · place each Pod, or leave it Pending';
+  $('#quests').hidden = false;
+  for (const [n, p] of RUSH.entries()) {
+    if (run.dead) return;
+    const valid = ['n1', 'n2', 'n3', 'n4'].filter(k => !whyNot(p, k, N));
+    const best = valid.slice().sort((a, b) => (N[b].cpu - N[b].used) - (N[a].cpu - N[a].used))[0];
+    const KEYS = ['n1', 'n2', 'n3', 'n4'];
+    const result = await new Promise(res => {
+      feedback('');
+      const opts = KEYS.map(k => { const x = N[k]; return { label: NODE[k].name, hint: `CPU ${x.cpu - x.used}m free · mem ${x.mem - x.mused}Mi · ${x.taint ? 'taint ' + TAINT_TXT[x.taint] : 'no taints'} · ${Object.entries(x.labels).map(e => e.join('=')).join(' ')}` }; });
+      opts.push({ label: 'Leave Pending', kbd: '0', hint: 'no node passes the filter' });
+      gbar(`Pod ${n + 1} of ${RUSH.length}`, `<div class="req"><div><span>Pod</span><b>${esc(p.n)}</b></div><div><span>Requests</span><b>${p.cpu}m CPU · ${p.mem}Mi memory</b></div><div><span>nodeSelector</span><b>${p.sel ? Object.entries(p.sel).map(e => e.join('=')).join(', ') : 'none'}</b></div><div><span>Tolerates</span><b>${p.tol ? p.tol.map(t => TAINT_TXT[t]).join(', ') : 'nothing'}</b></div></div>`,
+        opts, (j, btn) => {
+          if (run.dead) return res('dead');
+          const pick = j === 4 ? 'pending' : KEYS[j];
+          const miss = why => { btn.disabled = true; btn.classList.add('wrong'); G.hearts--; G.combo = 0; G.mistakes.push({ q: p.n, why }); feedback('✗ ' + why, 'bad'); flashScreen(); hud(); if (G.hearts <= 0) { gLocked = true; res('lost'); } };
+          if (pick === 'pending') {
+            if (valid.length) return miss(`It fits on ${valid.map(k => NODE[k].name).join(', ')}, so it shouldn't stay Pending.`);
+            gLocked = true; btn.classList.add('right'); G.combo++; G.score += 120; hud();
+            feedback('✓ Correct: no node passes the filter, so the Pod stays Pending until capacity frees up or the cluster autoscaler adds a node.', 'ok');
+            return res('ok');
+          }
+          const why = whyNot(p, pick, N); if (why) return miss(why);
+          gLocked = true; btn.classList.add('right'); G.combo++;
+          const bonus = pick === best; G.score += 100 + (bonus ? 50 : 0); hud();
+          N[pick].used += p.cpu; N[pick].mused += p.mem;
+          feedback(bonus ? `✓ Bound to ${NODE[pick].name}: it fits and leaves the most room (the default scheduler's choice).` : `✓ It fits on ${NODE[pick].name}. The default scheduler would have preferred ${NODE[best].name} (most room left).`, 'ok');
+          aimScope(pick);
+          launch({ from: 'sched', legs: [{ to: 'api', proto: 'REST', label: 'POST binding → ' + NODE[pick].name, payload: `{"kind":"Binding","metadata":{"name":"${p.n}"},"target":{"kind":"Node","name":"${NODE[pick].name}"}}` }, { to: pick + '.kubelet', proto: 'WATCH', label: 'Pod bound to ' + NODE[pick].name, payload: `ADDED Pod ${p.n} (spec.nodeName=${NODE[pick].name})` }] })
+            .then(() => { const used = new Set(Object.values(pods).filter(x => x.node === pick).map(x => x.slot)); const slot = [0, 1, 2, 3, 4, 5].find(s => !used.has(s)); if (slot !== undefined && G.run === run) spawnPod('rush' + n, pick, slot, p.n, p.n.startsWith('web') ? 'web' : p.n.startsWith('orders') ? 'orders' : 'checkout', '10.244.' + pick[1] + '.' + (60 + n)); });
+          res('ok');
+        });
+    });
+    if (run.dead || result === 'dead') return;
+    if (result === 'lost') return endLevel(false);
+    await realWait(2400);
+  }
+  if (!run.dead) endLevel(true);
+}
+
+// ---------- missions ----------
+const LEVELS = [
+{ t: 'Deliver the Deployment', kind: 'run', tag: 'Runner', d: 'Be the <code>kubectl apply</code> request and ride all the way to a running Pod.', start: 'you',
+  learn: ['Every change enters through the <b>kube-apiserver</b>: authentication → authorization (RBAC) → admission.', 'Only the apiserver talks to <b>etcd</b>; a write commits when a majority of members (2 of 3) has it.', 'Controllers react to <b>watch events</b>: Deployment → ReplicaSet → Pod.', 'The <b>scheduler</b> only picks a node and writes a Binding.', 'The <b>kubelet</b> on that node asks <b>containerd</b> to create the sandbox, the CNI plugin gives it an IP, and the image is pulled.'],
+  steps: [
+    { c: 'say', who: 'Your mission', text: 'You are a data packet: an HTTPS request created by <code>kubectl apply -f deploy.yaml</code>. Get your Deployment running. At each stop you choose where to go next. Between stops, steer with <kbd>A</kbd>/<kbd>D</kbd> to grab shards, dodge lag clouds, and hold <kbd>W</kbd> to boost.' },
+    { c: 'choose', carry: ['REST', 'POST deployments'], prompt: 'Where does kubectl send every request?', opts: [
+      ['api', true, 'The API server is the single entrance to the cluster.'],
+      ['etcd0', false, 'Clients never touch etcd. Only the API server may read or write it.'],
+      ['n2.kubelet', false, 'A kubelet runs Pods on its own node. It doesn\'t accept changes from users.'],
+      ['sched', false, 'The scheduler only places Pods. It never takes requests from users.']] },
+    { c: 'quiz', prompt: 'Three gates guard the apiserver. Which one runs <b>first</b>?', opts: [
+      ['Authentication: who are you?', true, 'It must know who you are before it can check what you may do.'],
+      ['Authorization (RBAC): may you do this?', false, 'RBAC needs an identity, so authentication must come first.'],
+      ['Admission: is the object acceptable?', false, 'Admission runs last, after you\'re identified and authorized.']] },
+    { c: 'quiz', prompt: 'You\'re in group <code>shop-devs</code>. A RoleBinding grants <code>create</code> on <code>deployments</code> in namespace <code>shop</code>. You\'re creating a Deployment in <code>shop</code>. Allowed?', opts: [
+      ['Yes', true, 'The verb, resource and namespace all match the RoleBinding.'],
+      ['No', false, 'The RoleBinding grants exactly this: create, deployments, namespace shop.']] },
+    { c: 'choose', carry: ['GRPC', 'Txn Put deployment'], prompt: 'Accepted! Where is the Deployment stored?', opts: [
+      ['etcd0', true, 'Writes go to the Raft leader, etcd-0 (the one with the crown).'],
+      ['etcd1', false, 'etcd-1 is a follower. Writes go to the leader, which replicates them.'],
+      ['kcm', false, 'Controllers act on objects. They don\'t store them.'],
+      ['registry', false, 'The registry stores container images, not cluster objects.']] },
+    { c: 'quiz', prompt: 'etcd has 3 members. How many must save your entry before it counts as committed?', opts: [
+      ['1, just the leader', false, 'If only the leader had it, losing the leader would lose your write.'],
+      ['2, a majority', true, 'A majority (quorum) means the write survives any single failure.'],
+      ['3, all of them', false, 'Waiting for every member would block writes whenever one is down.']] },
+    { c: 'ride', to: 'api', proto: 'GRPC', label: 'commit OK', text: 'Committed. Ride back to the apiserver with the result.' },
+    { c: 'choose', carry: ['WATCH', 'ADDED Deployment'], prompt: 'The Deployment is saved, but nothing runs yet. Who is <b>watching</b> for new Deployments?', opts: [
+      ['kcm', true, 'The Deployment controller (inside kube-controller-manager) reconciles Deployments.'],
+      ['sched', false, 'The scheduler only watches for Pods that don\'t have a node yet.'],
+      ['n1.kubelet', false, 'Kubelets only watch Pods already bound to their own node.']] },
+    { c: 'say', who: 'kube-controller-manager', text: 'The Deployment controller creates a ReplicaSet, and the ReplicaSet controller creates a <b>Pod</b> object. You transform: you are now a request to create that Pod.' },
+    { c: 'choose', carry: ['REST', 'POST pod'], prompt: 'Where does the controller send the new Pod?', opts: [
+      ['api', true, 'Controllers are clients too, and every write goes through the apiserver.'],
+      ['etcd0', false, 'Even controllers may not write to etcd directly.'],
+      ['n3.kubelet', false, 'No node has been chosen yet, so there\'s no kubelet to send it to.']] },
+    { c: 'choose', carry: ['WATCH', 'ADDED Pod (no node)'], prompt: 'A Pod with no node was stored. Who picks a node for it?', opts: [
+      ['sched', true, 'The scheduler watches for Pods with an empty <code>spec.nodeName</code>.'],
+      ['kcm', false, 'Controllers created the Pod. Placing it is the scheduler\'s job.'],
+      ['n2.kubelet', false, 'A kubelet only sees Pods already assigned to its node.']] },
+    { c: 'quiz', prompt: 'Your Pod requests <b>500m CPU</b> and tolerates no taints. Which node?', opts: [
+      ['node-1 · 300m CPU free', false, 'It doesn\'t fit: 300m free is less than the 500m requested.'],
+      ['node-2 · 1200m CPU free', true, 'It fits with the most room left, the default LeastAllocated choice.'],
+      ['node-3 · 1500m free · taint gpu=true:NoSchedule', false, 'The Pod has no toleration for that taint, so node-3 is filtered out.'],
+      ['node-4 · 900m free · taint pool=platform:NoSchedule', false, 'Platform taint, no toleration: filtered out.']] },
+    { c: 'choose', carry: ['REST', 'POST binding → node-2'], prompt: 'How does the scheduler record its decision?', opts: [
+      ['api', true, 'It writes a Binding to the apiserver. It never contacts nodes.'],
+      ['n2.kubelet', false, 'The scheduler never talks to nodes directly. It writes a Binding to the apiserver.']] },
+    { c: 'choose', carry: ['WATCH', 'Pod bound to node-2'], prompt: 'Who needs to hear that the Pod is bound to node-2?', opts: [
+      ['n2.kubelet', true, 'node-2\'s kubelet watches for Pods bound to node-2.'],
+      ['n1.kubelet', false, 'node-1\'s kubelet only watches Pods bound to node-1.'],
+      ['n2.containerd', false, 'containerd takes orders from the kubelet, not the apiserver.']] },
+    { c: 'choose', carry: ['CRI', 'RunPodSandbox'], prompt: 'The kubelet needs a sandbox for the Pod. Who builds it?', opts: [
+      ['n2.containerd', true, 'The container runtime builds sandboxes and containers through the CRI.'],
+      ['registry', false, 'The kubelet asks containerd, and containerd pulls images itself.'],
+      ['api', false, 'The apiserver stores state. It doesn\'t run anything on nodes.']] },
+    { c: 'quiz', prompt: 'The new sandbox needs an IP address. What provides it?', opts: [
+      ['The CNI plugin (flannel)', true, 'containerd calls the CNI plugin, which picks an IP from the node\'s /24 and wires up a veth.'],
+      ['kube-proxy', false, 'kube-proxy programs Service rules. It doesn\'t assign Pod IPs.'],
+      ['CoreDNS', false, 'CoreDNS answers name lookups. It doesn\'t hand out addresses.']] },
+    { c: 'choose', carry: ['OCI', 'GET image manifest'], prompt: 'The image <code>web:2.4.0</code> isn\'t cached. Where does containerd fetch it?', opts: [
+      ['registry', true, 'Images come from an OCI registry: the manifest first, then each layer.'],
+      ['git', false, 'Git holds config and manifests, not container images.'],
+      ['etcd0', false, 'etcd holds cluster objects, never image data.']] },
+    { c: 'ride', to: 'n2.containerd', proto: 'OCI', label: 'image layers', text: 'Carry the image layers back to node-2.' },
+    { c: 'do', fn: () => spawnPod('mine', 'n2', 3, 'web-7f5c8-yours', 'web', '10.244.2.42') },
+    { c: 'say', who: 'Mission complete', text: 'Your Pod is <b>running on node-2</b>! The kubelet reports Ready, the EndpointSlice controller adds its IP, and kube-proxy on every node updates its rules so the Service can reach it.' },
+  ] },
+{ t: 'The Traveler\'s Request', kind: 'run', tag: 'Runner', d: 'Carry a browser request through the load balancer, iptables, ingress and the overlay network, then bring the answer home.', start: 'you',
+  setup: () => setPhase('web2', 'crash'),
+  learn: ['Users reach the cluster through a <b>load balancer</b> and a <b>NodePort</b>. Pod IPs are private.', 'kube-proxy writes <b>iptables</b> rules, and the kernel does the DNAT.', 'Ingress routes only to <b>ready</b> endpoints. A Pod failing readiness is skipped.', 'Traffic to another node is wrapped in <b>VXLAN</b> and sent node-to-node.', 'Replies retrace the NAT path using <b>conntrack</b>.'],
+  steps: [
+    { c: 'say', who: 'Your mission', text: 'You are <code>GET https://shop.realm.io/</code>, sent by a shopper\'s browser. Reach a healthy web Pod and bring the page back. Watch out: one web Pod is failing its readiness probe.' },
+    { c: 'choose', carry: ['HTTP', 'GET shop.realm.io'], prompt: 'DNS for <code>shop.realm.io</code> points where?', opts: [
+      ['lb', true, 'The cloud load balancer is the public entrance for the ingress Service.'],
+      ['api', false, 'The apiserver manages the cluster. It doesn\'t serve your users.'],
+      ['pod:web1', false, 'Pod IPs are private, so the internet can\'t reach them directly.']] },
+    { c: 'choose', carry: ['HTTP', '→ NodePort 30443'], prompt: 'The load balancer forwards to a node. Where on node-1 does the packet land?', opts: [
+      ['n1.proxy', true, 'It lands on NodePort 30443, where node-1\'s iptables rules take over.'],
+      ['n1.kubelet', false, 'The kubelet manages Pods. It\'s not in the traffic path.'],
+      ['etcd0', false, 'User traffic never goes near etcd.']] },
+    { c: 'quiz', prompt: 'The rule says <code>:30443 → 10.244.1.5:443</code>. What actually rewrites the destination?', opts: [
+      ['The kernel (iptables DNAT)', true, 'kube-proxy only wrote the rule. The kernel applies it to each packet.'],
+      ['The kube-proxy process forwards it', false, 'kube-proxy isn\'t in the data path. It only programs the rules.'],
+      ['CoreDNS', false, 'This is address rewriting, not a name lookup.']] },
+    { c: 'choose', carry: ['HTTP', '→ 10.244.1.5:443'], prompt: 'Who owns 10.244.1.5?', opts: [
+      ['pod:ing', true, 'The ingress-nginx Pod terminates TLS and routes by host and path.'],
+      ['pod:web1', false, 'web1 is 10.244.1.12. The rule points at the ingress controller.'],
+      ['lb', false, 'You just came from the load balancer.']] },
+    { c: 'quiz', prompt: 'Ingress rule <code>/ → web</code>. Which backend may it pick?', opts: [
+      ['web-…-klmno on node-3 (Ready)', true, 'Only Ready Pods are in the EndpointSlice.'],
+      ['web-…-fghij on node-2 (readiness failing)', false, 'A Pod failing readiness is removed from the EndpointSlice, so it gets no traffic.'],
+      ['orders-… on node-2', false, 'Wrong Service: the rule maps <code>/</code> to <code>web</code>.']] },
+    { c: 'choose', carry: ['HTTP', 'GET / → 10.244.3.9'], prompt: 'The target Pod is on <b>node-3</b>. Where does the packet go first?', opts: [
+      ['n1.vtep', true, 'The route for 10.244.3.0/24 points at flannel.1, the VXLAN tunnel.'],
+      ['pod:web3', false, 'Pod IPs on other nodes aren\'t reachable directly. The packet must go through the tunnel.'],
+      ['n3.proxy', false, 'This is pod-to-pod traffic, so no Service rule is involved at this hop.']] },
+    { c: 'choose', carry: ['VXLAN', 'outer 192.168.1.11 → .13'], prompt: 'You\'re wrapped in a UDP :8472 packet. Which tunnel end?', opts: [
+      ['n3.vtep', true, '10.244.3.0/24 belongs to node-3.'],
+      ['n2.vtep', false, 'node-2 owns 10.244.2.0/24, not 10.244.3.0/24.'],
+      ['n4.vtep', false, 'node-4 owns 10.244.4.0/24.']] },
+    { c: 'choose', carry: ['HTTP', 'GET / (unwrapped)'], prompt: 'node-3 unwraps you. Deliver it.', opts: [
+      ['pod:web3', true, 'The cni0 bridge hands it to the Pod\'s veth, and web answers 200 OK.'],
+      ['pod:metrics', false, 'Wrong Pod: you\'re addressed to 10.244.3.9.']] },
+    { c: 'say', who: 'web Pod', text: '<b>200 OK</b>, 18 KB of HTML. Now carry the page home. Replies retrace your path.' },
+    { c: 'ride', to: 'n3.vtep', proto: 'HTTP', label: '200 OK' },
+    { c: 'ride', to: 'n1.vtep', proto: 'VXLAN', label: 'VXLAN back to node-1' },
+    { c: 'ride', to: 'pod:ing', proto: 'HTTP', label: '200 OK' },
+    { c: 'choose', carry: ['HTTP', '200 OK'], prompt: 'From ingress, where does the reply go?', opts: [
+      ['n1.proxy', true, 'conntrack remembers the NAT and reverses it on the way out.'],
+      ['you', false, 'The reply must retrace the NAT path, because the client expects it from the load balancer\'s address.']] },
+    { c: 'ride', to: 'lb', proto: 'HTTP', label: '200 OK' },
+    { c: 'ride', to: 'you', proto: 'HTTP', label: 'page delivered' },
+    { c: 'say', who: 'Mission complete', text: 'The page loads. The shopper never knew which Pod answered, or that one was sick.' },
+  ] },
+{ t: 'Gatekeeper', kind: 'gate', tag: 'Mini-game', d: 'You are the kube-apiserver. Allow or deny 12 requests using RBAC and admission policy.',
+  learn: ['Authentication comes first: no identity means <b>401</b>.', 'RBAC grants specific verbs on specific resources in specific namespaces, and anything not granted is denied (<b>403</b>).', 'Admission policy (e.g. Kyverno) applies to everyone, even Argo CD.', 'Denied requests never reach etcd.'] },
+{ t: 'Scheduler Rush', kind: 'rush', tag: 'Mini-game', d: 'You are the kube-scheduler. Place 10 Pods using requests, taints and nodeSelectors, or leave them Pending.',
+  learn: ['Filtering checks resource requests, taints and tolerations, and nodeSelectors.', 'Scoring prefers the node with the most room (LeastAllocated).', 'If nothing fits, a Pod stays <b>Pending</b>, which is normal and recoverable.', 'Requests (not actual usage) decide whether a Pod fits.'] },
+{ t: 'Asking the Oracle', kind: 'run', tag: 'Runner', d: 'Resolve a Service name through CoreDNS, then reach a ClusterIP that nobody listens on.', start: 'pod:web1',
+  learn: ['Pods resolve names through CoreDNS at the <b>kube-dns</b> ClusterIP (10.96.0.10).', 'A ClusterIP is <b>virtual</b>: iptables DNATs it to a real Pod IP.', 'CoreDNS answers from its watch on Services, so no lookup hits etcd.'],
+  steps: [
+    { c: 'say', who: 'Your mission', text: 'You are a DNS query from the web Pod on node-1: <code>A? orders.shop.svc.cluster.local</code>. Find the answer, then deliver the real request.' },
+    { c: 'choose', carry: ['DNS', 'A? orders → 10.96.0.10'], prompt: '<code>resolv.conf</code> says <code>nameserver 10.96.0.10</code>. Where does the query go first?', opts: [
+      ['n1.proxy', true, '10.96.0.10 is a ClusterIP, so iptables on this node DNATs it to a CoreDNS Pod.'],
+      ['pod:dns', false, 'The Pod only knows 10.96.0.10, a virtual IP. iptables translates it first.'],
+      ['api', false, 'DNS doesn\'t go through the apiserver.']] },
+    { c: 'choose', carry: ['DNS', '→ 10.244.2.3:53'], prompt: 'DNAT picked CoreDNS at 10.244.2.3 on node-2. Next hop?', opts: [
+      ['n1.vtep', true, 'Different node, so through the VXLAN tunnel.'],
+      ['pod:dns', false, 'Cross-node traffic must go through the tunnel.']] },
+    { c: 'ride', to: 'n2.vtep', proto: 'VXLAN', label: 'VXLAN → node-2' },
+    { c: 'ride', to: 'pod:dns', proto: 'DNS', label: 'A? orders' },
+    { c: 'quiz', prompt: 'How does CoreDNS know the answer?', opts: [
+      ['From its watch on Services', true, 'Its kubernetes plugin keeps every Service in memory.'],
+      ['It queries etcd', false, 'Only the apiserver talks to etcd.'],
+      ['It asks the orders Pod', false, 'Pods don\'t announce themselves. Services do the naming.']] },
+    { c: 'ride', to: 'n2.vtep', proto: 'DNS', label: 'A 10.96.88.4' },
+    { c: 'ride', to: 'n1.vtep', proto: 'VXLAN', label: 'VXLAN → node-1' },
+    { c: 'ride', to: 'n1.proxy', proto: 'DNS', label: 'un-DNAT reply' },
+    { c: 'ride', to: 'pod:web1', proto: 'DNS', label: 'orders = 10.96.88.4' },
+    { c: 'quiz', prompt: 'Which process is listening on 10.96.88.4:80?', opts: [
+      ['None: it\'s a virtual IP', true, 'A ClusterIP exists only as iptables rules on every node.'],
+      ['kube-proxy', false, 'kube-proxy writes rules. It doesn\'t accept connections.'],
+      ['The orders Pod', false, 'The Pod listens on its own IP, 10.244.2.21:8080.']] },
+    { c: 'choose', carry: ['HTTP', 'GET /orders → 10.96.88.4'], prompt: 'Now send the real request. First hop?', opts: [
+      ['n1.proxy', true, 'iptables matches <code>KUBE-SVC-ORDERS</code> and DNATs to 10.244.2.21:8080.'],
+      ['pod:orders', false, 'You only know the virtual IP. iptables must translate it first.']] },
+    { c: 'ride', to: 'n1.vtep', proto: 'HTTP', label: '→ 10.244.2.21:8080' },
+    { c: 'ride', to: 'n2.vtep', proto: 'VXLAN', label: 'VXLAN → node-2' },
+    { c: 'ride', to: 'pod:orders', proto: 'HTTP', label: 'GET /orders' },
+    { c: 'say', who: 'Mission complete', text: 'orders answers <code>{"orders": 3}</code>. You resolved a name, crossed a virtual IP and the overlay.' },
+  ] },
+{ t: 'GitOps Courier', kind: 'run', tag: 'Runner', d: 'Carry a commit from git push through Argo CD until the cluster matches Git.', start: 'you',
+  learn: ['With GitOps you change <b>Git</b>; a tool makes the cluster match.', 'Webhooks enter like any web request: load balancer → ingress.', 'Argo CD\'s parts coordinate through the Kubernetes API (the Application CRD).', '<b>repo-server</b> renders manifests and <b>application-controller</b> diffs and applies them.', 'OutOfSync means live state differs from Git. Syncing applies the difference.'],
+  steps: [
+    { c: 'say', who: 'Your mission', text: 'You are a commit: <code>web: image 2.4.0, replicas 4</code>. In GitOps nobody runs kubectl against production. Get the cluster to match you.' },
+    { c: 'choose', carry: ['GIT', 'git push origin main'], prompt: 'Where does your change go?', opts: [
+      ['git', true, 'Git is the source of truth in GitOps.'],
+      ['api', false, 'In GitOps you change Git and a tool applies it, so no direct kubectl.'],
+      ['pod:argoctl', false, 'Argo CD reads from Git. You don\'t push to it.']] },
+    { c: 'choose', carry: ['GIT', 'webhook POST /api/webhook'], prompt: 'Git fires a webhook to <code>argocd.realm.io</code>. How does it enter the cluster?', opts: [
+      ['lb', true, 'Webhooks come in like any web request, through the load balancer and ingress.'],
+      ['pod:argorepo', false, 'Webhooks go to argocd-server, and they enter through the ingress like other traffic.'],
+      ['etcd0', false, 'Nothing external touches etcd.']] },
+    { c: 'ride', to: 'n1.proxy', proto: 'HTTP', label: 'NodePort 30443' },
+    { c: 'ride', to: 'pod:ing', proto: 'HTTP', label: 'host argocd.realm.io' },
+    { c: 'choose', carry: ['HTTP', 'POST /api/webhook'], prompt: 'argocd-server runs on node-4. Next hop from ingress (on node-1)?', opts: [
+      ['n1.vtep', true, 'Different node, so through the tunnel.'],
+      ['pod:argosrv', false, 'Cross-node Pod traffic must go through the overlay tunnel.']] },
+    { c: 'ride', to: 'n4.vtep', proto: 'VXLAN', label: 'VXLAN → node-4' },
+    { c: 'ride', to: 'pod:argosrv', proto: 'HTTP', label: 'webhook' },
+    { c: 'choose', carry: ['REST', 'PATCH Application refresh'], prompt: 'argocd-server wants the controller to refresh <code>shop-web</code>. How?', opts: [
+      ['api', true, 'It annotates the Application object, and the controller sees the change through its watch.'],
+      ['pod:argoctl', false, 'Argo CD\'s parts coordinate through the Kubernetes API (the Application CRD).']] },
+    { c: 'choose', carry: ['WATCH', 'Application MODIFIED'], prompt: 'Who receives the watch event?', opts: [
+      ['pod:argoctl', true, 'argocd-application-controller reconciles Applications.'],
+      ['pod:fluxkus', false, 'That\'s Flux, a different tool. Argo CD\'s controller owns Applications.'],
+      ['kcm', false, 'kube-controller-manager doesn\'t know about Argo CD\'s CRDs.']] },
+    { c: 'choose', carry: ['RPC', 'GenerateManifest'], prompt: 'The controller needs the rendered manifests for the new commit. Ask whom?', opts: [
+      ['pod:argorepo', true, 'repo-server clones Git and renders Kustomize or Helm.'],
+      ['git', false, 'The controller asks repo-server, which does the Git work.']] },
+    { c: 'choose', carry: ['GIT', 'git fetch main'], prompt: 'repo-server needs commit <code>9f3c2ab</code>.', opts: [
+      ['git', true, 'It fetches the new objects from the repository.'],
+      ['registry', false, 'Manifests live in Git. The registry holds images.']] },
+    { c: 'ride', to: 'pod:argorepo', proto: 'GIT', label: 'packfile' },
+    { c: 'ride', to: 'pod:argoctl', proto: 'RPC', label: 'rendered manifests' },
+    { c: 'quiz', prompt: 'Live: image 2.3.0, 3 replicas. Git: image 2.4.0, 4 replicas. What does Argo CD report?', opts: [
+      ['OutOfSync', true, 'Live state differs from Git.'],
+      ['Synced', false, 'Synced would mean live already matches Git.'],
+      ['Degraded', false, 'Degraded is a health status. This is about sync.']] },
+    { c: 'choose', carry: ['REST', 'PATCH deployment (server-side apply)'], prompt: 'Sync! Where does the change get applied?', opts: [
+      ['api', true, 'Argo CD is just another API client, held to the same RBAC and admission rules.'],
+      ['n2.kubelet', false, 'Argo CD applies through the API. Kubelets react later.']] },
+    { c: 'say', who: 'Mission complete', text: 'The Deployment controller rolls out 2.4.0 and Argo CD marks <b>Synced</b> and <b>Healthy</b>. Git and the cluster agree.' },
+  ] },
+];
+
+// ---------- UI glue ----------
+function renderMissions() {
+  const ts = totalStars();
+  $('#mrank').innerHTML = `Rank: <b>${rankOf(ts)}</b> · ${ts}/${LEVELS.length * 3} ★ · Codex ${save.codex.length}/${CODEX.length}`;
+  $('#mlist').innerHTML = LEVELS.map((L, i) => `<button class="q${G.level === i && G.active ? ' on' : ''}" data-l="${i}"><i>${i + 1}</i><b>${esc(L.t)} <em class="tag">${L.tag}</em></b><span>${L.d}<br><span class="st">${'★'.repeat(save.stars[i] || 0)}${'☆'.repeat(3 - (save.stars[i] || 0))}</span></span></button>`).join('')
+    + '<div class="btnrow"><button class="btn" id="bCodex">Open Codex</button></div>';
+  $('#mlist').querySelectorAll('[data-l]').forEach(b => b.onclick = () => runLevel(+b.dataset.l));
+  $('#bCodex').onclick = showCodex;
+}
+function playLobby() {
+  if (G.run) G.run.dead = true; G.run = null; cleanupRide();
+  G.level = -1; G.kind = null; G.carry = null; player.visible = false; spot = null;
+  $('#hud').hidden = true; renderMissions(); resetWorld(); flyHome();
+  const next = LEVELS.findIndex((_, i) => !save.stars[i]);
+  const start = next < 0 ? 0 : next;
+  feedback('');
+  gbar('Packet Runner', 'You become the data. Ride the streams between components and choose the right path at every stop. Wrong turns cost a heart and teach you why. Pick a mission on the left, or start here:',
+    [{ label: `Play: ${LEVELS[start].t}`, kbd: '↵' }], () => runLevel(start));
+}
+function setMode(play) {
+  G.active = play;
+  $('#mExplore').classList.toggle('on', !play); $('#mPlay').classList.toggle('on', play);
+  $('#qhead').textContent = play ? 'Missions' : 'Quests';
+  $('#qlist').hidden = play; $('#legendBox').hidden = play; $('#mwrap').hidden = !play;
+  $('#dlg').hidden = play; $('#gbar').hidden = !play; $('#insp').hidden = true;
+  if (play) { stopQuest(); playLobby(); }
+  else { if (G.run) G.run.dead = true; G.run = null; cleanupRide(); player.visible = false; $('#hud').hidden = true; spot = null; hideModal(); controls.enabled = true; resetWorld(); flyHome(); }
+}
+$('#mExplore').onclick = () => setMode(false);
+$('#mPlay').onclick = () => setMode(true);
+$('#steer').querySelectorAll('button').forEach(b => b.addEventListener('pointerdown', e => { e.preventDefault(); RS.lane = Math.max(-1, Math.min(1, RS.lane + +b.dataset.d)); }));
+$('#bBoost').addEventListener('pointerdown', () => RS.boost = true);
+addEventListener('pointerup', () => { if (RS.ride) RS.boost = false; });
+addEventListener('keydown', e => {
+  if (!G.active || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  let used = true;
+  if (!$('#modal').hidden) { if (k === 'Escape') hideModal(); else used = false; }
+  else if (RS.ride) {
+    if (k === 'a' || k === 'ArrowLeft') RS.lane = Math.max(-1, RS.lane - 1);
+    else if (k === 'd' || k === 'ArrowRight') RS.lane = Math.min(1, RS.lane + 1);
+    else if (k === 'w' || k === 'ArrowUp' || k === 'Shift') RS.boost = true;
+    else used = false;
+  }
+  else if (G.kind === 'gate' && (k === 'a' || k === 'ArrowLeft')) pickOpt(0);
+  else if (G.kind === 'gate' && (k === 'd' || k === 'ArrowRight')) pickOpt(1);
+  else if (/^[0-9]$/.test(k)) pickOpt(k === '0' ? gOpts.length - 1 : +k - 1);
+  else if ((k === 'Enter' || k === ' ') && gOpts.length === 1) pickOpt(0);
+  else if (k === 'Escape') playLobby();
+  else if (k === ' ' || k === 'ArrowRight' || k === 'ArrowLeft' || k === 'Enter') { /* swallow explore-mode shortcuts */ }
+  else used = false;
+  if (used) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+addEventListener('keyup', e => { if (['w', 'W', 'ArrowUp', 'Shift'].includes(e.key)) RS.boost = false; });
+// self-check: every runner choice has exactly one right answer and points at real components
+LEVELS.forEach(L => (L.steps || []).forEach(s => { if (s.opts) console.assert(s.opts.filter(o => o[1]).length === 1 && (s.c !== 'choose' || s.opts.every(o => C[o[0]])), `level ${L.t}: ${s.prompt}`); }));
+
 </script>
 
 </html>
